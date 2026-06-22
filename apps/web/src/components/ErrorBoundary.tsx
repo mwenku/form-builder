@@ -1,38 +1,40 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { ErrorState } from "@/components/StatusViews";
+import { RootErrorFallback } from "@/components/RootErrorFallback";
+import { reportError } from "@/lib/report-error";
 
 type Props = {
   children: ReactNode;
+  onReset?: () => void;
 };
 
 type State = {
   hasError: boolean;
+  error: Error | null;
 };
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, error: null };
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    reportError(error, { source: "error-boundary" });
     if (import.meta.env.DEV) {
-      console.error("Unhandled UI error", error, info.componentStack);
+      console.error(info.componentStack);
     }
   }
 
+  handleRetry = () => {
+    this.props.onReset?.();
+    this.setState({ hasError: false, error: null });
+    window.location.assign("/");
+  };
+
   render() {
     if (this.state.hasError) {
-      return (
-        <ErrorState
-          code="server_error"
-          onRetry={() => {
-            this.setState({ hasError: false });
-            window.location.assign("/");
-          }}
-        />
-      );
+      return <RootErrorFallback onRetry={this.handleRetry} detail={this.state.error?.message} />;
     }
     return this.props.children;
   }

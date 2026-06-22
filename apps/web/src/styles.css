@@ -492,3 +492,32 @@ button.button-primary {
     gap: 0.15rem;
   }
 }
+
+.fatal-fallback {
+  background: var(--oo-surface);
+  border: 1px solid var(--oo-border-light);
+  border-left: 3px solid var(--oo-danger);
+  padding: 1.5rem;
+  max-width: var(--oo-content-max);
+}
+
+.fatal-fallback__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+.fatal-fallback__message {
+  margin: 0 0 1rem;
+  color: var(--oo-text-intro);
+}
+
+.fatal-fallback__detail {
+  margin: 0 0 1rem;
+  padding: 0.75rem;
+  background: var(--oo-bg);
+  border: 1px solid var(--oo-border-light);
+  font-size: 0.8rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

@@ -30,7 +30,16 @@ export function useFormFill(formId: string) {
       submitted: false,
     }));
 
-    const result = await submitMutation.mutateAsync(ui.values);
+    let result;
+    try {
+      result = await submitMutation.mutateAsync(ui.values);
+    } catch {
+      setUi((previous) => ({
+        ...previous,
+        submitErrorCode: "submit_failed",
+      }));
+      return;
+    }
 
     if (result.ok) {
       setUi({

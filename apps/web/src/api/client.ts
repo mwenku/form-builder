@@ -13,7 +13,11 @@ async function parseJSON<T>(response: Response): Promise<T> {
   if (!text) {
     return {} as T;
   }
-  return JSON.parse(text) as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new ApiError("server_error");
+  }
 }
 
 async function request<T>(path: string): Promise<T> {
@@ -29,16 +33,33 @@ async function request<T>(path: string): Promise<T> {
   return parseJSON<T>(response);
 }
 
+function assertArray<T>(value: unknown, code: "load_failed" = "load_failed"): T[] {
+  if (!Array.isArray(value)) {
+    throw new ApiError(code);
+  }
+  return value;
+}
+
+function assertObject<T extends object>(value: unknown, code: "load_failed" = "load_failed"): T {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new ApiError(code);
+  }
+  return value as T;
+}
+
 export async function fetchForms(): Promise<FormSummary[]> {
-  return request<FormSummary[]>("/forms");
+  const data = await request<unknown>("/forms");
+  return assertArray<FormSummary>(data);
 }
 
 export async function fetchForm(id: string): Promise<FormConfig> {
-  return request<FormConfig>(`/forms/${id}`);
+  const data = await request<unknown>(`/forms/${id}`);
+  return assertObject<FormConfig>(data);
 }
 
 export async function fetchIntegrity(id: string): Promise<FormIntegrityView> {
-  return request<FormIntegrityView>(`/forms/${id}/integrity`);
+  const data = await request<unknown>(`/forms/${id}/integrity`);
+  return assertObject<FormIntegrityView>(data);
 }
 
 export type SubmitResult =

@@ -1,56 +1,49 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { HelmetProvider } from "react-helmet-async";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { AppProviders } from "@/components/AppProviders";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { FormListPage } from "@/pages/FormListPage";
-import { FormFillPage } from "@/pages/FormFillPage";
-import { IntegrityPage } from "@/pages/IntegrityPage";
+import { App } from "@/App";
+import { RootErrorFallback } from "@/components/RootErrorFallback";
+import { registerGlobalErrorHandlers } from "@/lib/report-error";
 import "@/styles.css";
 
-function BrandMark() {
-  return (
-    <svg
-      className="navbar__emblem"
-      aria-hidden="true"
-      viewBox="0 0 82 48"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        fill="currentColor"
-        d="M41 4a20 20 0 1 1 0 40 20 20 0 0 1 0-40Zm-14 20a14 14 0 1 0 28 0 14 14 0 0 0-28 0Zm28.5-16a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm0 20a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"
-      />
-    </svg>
+registerGlobalErrorHandlers();
+
+function renderFatal(error: unknown) {
+  const detail = error instanceof Error ? error.message : String(error);
+  if (import.meta.env.DEV) {
+    console.error("Fatal bootstrap error", error);
+  }
+
+  const root = document.getElementById("root");
+  if (!root) {
+    return;
+  }
+
+  createRoot(root).render(
+    <div className="app">
+      <header className="navbar">
+        <div className="contained-width navbar__wrapper">
+          <span className="navbar__title">Form Builder</span>
+        </div>
+      </header>
+      <main className="app-main contained-width">
+        <RootErrorFallback detail={detail} onRetry={() => window.location.reload()} />
+      </main>
+    </div>,
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AppProviders>
-      <HelmetProvider>
-        <BrowserRouter>
-          <div className="app">
-            <header className="navbar">
-              <div className="contained-width navbar__wrapper">
-                <a href="/" className="navbar__brand" aria-label="Form Builder home">
-                  <BrandMark />
-                  <span className="navbar__title">Form Builder</span>
-                </a>
-              </div>
-            </header>
-            <main className="app-main contained-width">
-              <ErrorBoundary>
-                <Routes>
-                  <Route path="/" element={<FormListPage />} />
-                  <Route path="/forms/:id/integrity" element={<IntegrityPage />} />
-                  <Route path="/forms/:id" element={<FormFillPage />} />
-                </Routes>
-              </ErrorBoundary>
-            </main>
-          </div>
-        </BrowserRouter>
-      </HelmetProvider>
-    </AppProviders>
-  </StrictMode>,
-);
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Root element #root was not found");
+}
+
+try {
+  createRoot(rootElement).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+} catch (error) {
+  renderFatal(error);
+}
