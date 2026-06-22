@@ -42,4 +42,4 @@ Assign your domain in Dokploy (Traefik handles routing). The `nginx` service ser
 make compose-up
 ```
 
-Open http://localhost:8081 (nginx maps host 8081 → container 80).
+Open http://localhost:9999 (nginx maps host `APP_PORT` → container 80).

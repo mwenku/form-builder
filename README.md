@@ -36,7 +36,7 @@ Requires Docker Desktop, Go 1.22+, Node 20+, and Git.
 | `make setup` | First-time install, env, Docker (postgres + api), typegen |
 | `make dev` | Start API containers + Vite dev server |
 | `make ci` | Code quality: types, format, lint, build, test |
-| `make compose-up` | Full stack with nginx (Dokploy parity) → http://localhost:8081 |
+| `make compose-up` | Full stack with nginx (Dokploy parity) → http://localhost:9999 |
 | `make dokploy-env` | Print env vars for Dokploy |
 
 ## How it works
@@ -122,4 +122,4 @@ scripts/  # Windows setup helpers
 make compose-up
 ```
 
-Open http://localhost:8081 — same layout as Dokploy (`/` static, `/api` proxied).
+Open http://localhost:9999 — same layout as Dokploy (`/` static, `/api` proxied).
