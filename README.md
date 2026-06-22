@@ -2,7 +2,7 @@
 
 Configuration-driven forms: JSON Schema in PostgreSQL, runtime validation in Go, dynamic React rendering.
 
-**Live demo:** _(add your Dokploy URL after deploy)_
+**Live demo:** https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/
 
 ## Quick start
 
