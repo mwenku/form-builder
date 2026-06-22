@@ -1,65 +1,69 @@
 package validation
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"formbuilder/api/internal/models"
-
-	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
 func ValidatePayload(schemaJSON json.RawMessage, payload json.RawMessage) ([]models.ValidationError, error) {
-	compiler := jsonschema.NewCompiler()
-	compiler.Draft = jsonschema.Draft2020
-	compiler.AssertFormat = true
-
-	if err := compiler.AddResource("schema.json", bytes.NewReader(schemaJSON)); err != nil {
-		return nil, fmt.Errorf("compile schema: %w", err)
-	}
-
-	schema, err := compiler.Compile("schema.json")
+	schema, err := parseJSONSchema(schemaJSON)
 	if err != nil {
-		return nil, fmt.Errorf("compile schema: %w", err)
+		return nil, fmt.Errorf("parse schema: %w", err)
 	}
 
-	var data any
+	var data map[string]any
 	if err := json.Unmarshal(payload, &data); err != nil {
 		return []models.ValidationError{{Field: "", Message: "invalid JSON body"}}, nil
 	}
 
-	if err := schema.Validate(data); err != nil {
-		ve, ok := err.(*jsonschema.ValidationError)
-		if !ok {
-			return []models.ValidationError{{Field: "", Message: err.Error()}}, nil
+	validators := make(map[string]fieldValidator, len(schema.Properties))
+	for field, property := range schema.Properties {
+		validator, err := compileFieldValidator(property, schema.isRequired(field))
+		if err != nil {
+			return nil, fmt.Errorf("compile field %q: %w", field, err)
 		}
-		return mapValidationErrors(ve), nil
+		validators[field] = validator
 	}
 
+	var validationErrors []models.ValidationError
+
+	if schema.rejectsAdditionalProperties() {
+		for field := range data {
+			if _, ok := schema.Properties[field]; !ok {
+				validationErrors = append(validationErrors, models.ValidationError{
+					Field:   field,
+					Message: unknownFieldMessage(field),
+				})
+			}
+		}
+	}
+
+	for _, field := range schema.Required {
+		if isMissingRequiredValue(data[field]) {
+			validationErrors = append(validationErrors, models.ValidationError{
+				Field:   field,
+				Message: requiredFieldMessage(field),
+			})
+		}
+	}
+
+	for field, validator := range validators {
+		value, present := data[field]
+		if !present {
+			continue
+		}
+		for _, message := range validator(value) {
+			validationErrors = append(validationErrors, models.ValidationError{
+				Field:   field,
+				Message: message,
+			})
+		}
+	}
+
+	if len(validationErrors) > 0 {
+		return validationErrors, nil
+	}
 	return nil, nil
-}
-
-func mapValidationErrors(err *jsonschema.ValidationError) []models.ValidationError {
-	var out []models.ValidationError
-	collectErrors(err, &out)
-	if len(out) == 0 {
-		return []models.ValidationError{{Field: "", Message: err.Message}}
-	}
-	return out
-}
-
-func collectErrors(err *jsonschema.ValidationError, out *[]models.ValidationError) {
-	if err.InstanceLocation != "" && err.Message != "" {
-		field := strings.TrimPrefix(err.InstanceLocation, "/")
-		field = strings.ReplaceAll(field, "/", ".")
-		*out = append(*out, models.ValidationError{
-			Field:   field,
-			Message: err.Message,
-		})
-	}
-	for _, child := range err.Causes {
-		collectErrors(child, out)
-	}
 }

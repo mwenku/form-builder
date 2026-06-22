@@ -97,3 +97,31 @@ func TestValidatePayload_invalidE164Phone(t *testing.T) {
 		t.Fatal("expected validation errors")
 	}
 }
+
+func TestValidatePayload_rejectsUnknownFields(t *testing.T) {
+	schema := json.RawMessage(`{
+		"type": "object",
+		"required": ["name"],
+		"properties": {
+			"name": { "type": "string", "minLength": 1 }
+		},
+		"additionalProperties": false
+	}`)
+	payload := json.RawMessage(`{"name":"Ada","extra":"nope"}`)
+	errs, err := validation.ValidatePayload(schema, payload)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(errs) == 0 {
+		t.Fatal("expected validation errors")
+	}
+}
+
+func TestValidateUUID(t *testing.T) {
+	if err := validation.ValidateUUID("11111111-1111-1111-1111-111111111111"); err != nil {
+		t.Fatalf("expected valid uuid, got %v", err)
+	}
+	if err := validation.ValidateUUID("not-a-uuid"); err == nil {
+		t.Fatal("expected invalid uuid error")
+	}
+}

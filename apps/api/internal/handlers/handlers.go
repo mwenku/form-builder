@@ -127,6 +127,9 @@ func (a *API) createSubmission(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseUUID(s string) (uuid.UUID, error) {
+	if err := validation.ValidateUUID(s); err != nil {
+		return uuid.Nil, err
+	}
 	return uuid.Parse(s)
 }
 
