@@ -1,0 +1,2 @@
+[typescript]
+output_file = "apps/web/src/generated/api-types.ts"
