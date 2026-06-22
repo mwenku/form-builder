@@ -63,3 +63,37 @@ func TestValidatePayload_invalidJSON(t *testing.T) {
 		t.Fatalf("expected invalid JSON error, got %v", errs)
 	}
 }
+
+func contactSchemaWithPhone() json.RawMessage {
+	return json.RawMessage(`{
+		"$schema": "https://json-schema.org/draft/2020-12/schema",
+		"type": "object",
+		"required": ["phone"],
+		"properties": {
+			"phone": { "type": "string", "pattern": "^\\+[1-9]\\d{6,14}$" }
+		},
+		"additionalProperties": false
+	}`)
+}
+
+func TestValidatePayload_validE164Phone(t *testing.T) {
+	payload := json.RawMessage(`{"phone":"+447700900123"}`)
+	errs, err := validation.ValidatePayload(contactSchemaWithPhone(), payload)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(errs) != 0 {
+		t.Fatalf("expected no errors, got %v", errs)
+	}
+}
+
+func TestValidatePayload_invalidE164Phone(t *testing.T) {
+	payload := json.RawMessage(`{"phone":"07700900123"}`)
+	errs, err := validation.ValidatePayload(contactSchemaWithPhone(), payload)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(errs) == 0 {
+		t.Fatal("expected validation errors")
+	}
+}

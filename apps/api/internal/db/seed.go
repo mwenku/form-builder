@@ -27,15 +27,22 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 		"type": "object",
 		"required": ["name", "email"],
 		"properties": {
-			"name": { "type": "string", "minLength": 1 },
+			"name": { "type": "string", "minLength": 1, "maxLength": 120 },
 			"email": { "type": "string", "format": "email" },
-			"message": { "type": "string" }
+			"message": { "type": "string", "maxLength": 2000 }
 		},
 		"additionalProperties": false
 	}`)
 	contactV1UI := json.RawMessage(`{
 		"order": ["name", "email", "message"],
-		"labels": { "name": "Full name", "email": "Email address", "message": "Message" }
+		"labels": { "name": "Full name", "email": "Email address", "message": "How can we help?" },
+		"widgets": { "message": "textarea" },
+		"placeholders": {
+			"name": "Jane Doe",
+			"email": "jane@example.com",
+			"message": "Tell us what you need help with…"
+		},
+		"help": { "message": "Optional — share as much detail as you like." }
 	}`)
 
 	contactV2Schema := json.RawMessage(`{
@@ -43,16 +50,31 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 		"type": "object",
 		"required": ["name", "email", "phone"],
 		"properties": {
-			"name": { "type": "string", "minLength": 1 },
+			"name": { "type": "string", "minLength": 1, "maxLength": 120 },
 			"email": { "type": "string", "format": "email" },
-			"phone": { "type": "string", "minLength": 5 },
-			"message": { "type": "string" }
+			"phone": { "type": "string", "pattern": "^\\+[1-9]\\d{6,14}$" },
+			"message": { "type": "string", "maxLength": 2000 }
 		},
 		"additionalProperties": false
 	}`)
 	contactV2UI := json.RawMessage(`{
 		"order": ["name", "email", "phone", "message"],
-		"labels": { "name": "Full name", "email": "Email", "phone": "Phone", "message": "Message" }
+		"labels": {
+			"name": "Full name",
+			"email": "Email address",
+			"phone": "Phone number",
+			"message": "How can we help?"
+		},
+		"widgets": { "phone": "phone", "message": "textarea" },
+		"placeholders": {
+			"name": "Jane Doe",
+			"email": "jane@example.com",
+			"message": "Tell us what you need help with…"
+		},
+		"help": {
+			"phone": "Select your country code and enter your number without the leading zero.",
+			"message": "Optional — share as much detail as you like."
+		}
 	}`)
 
 	requestSchema := json.RawMessage(`{
@@ -60,9 +82,9 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 		"type": "object",
 		"required": ["title", "category", "amount", "requestDate"],
 		"properties": {
-			"title": { "type": "string", "minLength": 1 },
+			"title": { "type": "string", "minLength": 1, "maxLength": 120 },
 			"category": { "type": "string", "enum": ["travel", "equipment", "training", "other"] },
-			"amount": { "type": "number", "minimum": 0 },
+			"amount": { "type": "number", "minimum": 0.01, "multipleOf": 0.01 },
 			"requestDate": { "type": "string", "format": "date" },
 			"urgent": { "type": "boolean" }
 		},
@@ -76,6 +98,21 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 			"amount": "Amount (USD)",
 			"requestDate": "Date needed",
 			"urgent": "Mark as urgent"
+		},
+		"placeholders": {
+			"title": "e.g. Conference travel to Nairobi"
+		},
+		"help": {
+			"amount": "Enter the estimated cost in US dollars.",
+			"requestDate": "When do you need this approved by?"
+		},
+		"enumLabels": {
+			"category": {
+				"travel": "Travel",
+				"equipment": "Equipment",
+				"training": "Training",
+				"other": "Other"
+			}
 		}
 	}`)
 
