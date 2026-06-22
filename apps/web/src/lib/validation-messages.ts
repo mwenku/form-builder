@@ -17,6 +17,12 @@ export function friendlyValidationMessage(
   if (message.includes("minimum") || message.includes("less than")) {
     return `${fieldLabel} is below the allowed minimum.`;
   }
+  if (message.includes("pattern") && (message.includes("phone") || field.includes("phone"))) {
+    return "Enter a valid phone number with country code (e.g. +447700900123).";
+  }
+  if (message.includes("pattern")) {
+    return `${fieldLabel} is not in a valid format.`;
+  }
   if (message.includes("enum") || message.includes("allowed values")) {
     return `Choose a valid option for ${fieldLabel}.`;
   }

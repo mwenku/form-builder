@@ -276,7 +276,8 @@ a:focus {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--oo-text-muted);
   border-radius: 0;
@@ -288,14 +289,61 @@ a:focus {
     box-shadow 0.15s ease;
 }
 
+.field textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.field-help {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--oo-text-muted);
+}
+
+.phone-field {
+  display: grid;
+  grid-template-columns: minmax(9rem, 38%) 1fr;
+  gap: 0.5rem;
+}
+
+.phone-field__country,
+.phone-field__number {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--oo-text-muted);
+  border-radius: 0;
+  font: inherit;
+  background: var(--oo-surface);
+  color: var(--oo-text);
+}
+
+.phone-field__country:focus,
+.phone-field__number:focus {
+  outline: 2px solid var(--oo-primary-light);
+  border-color: var(--oo-primary);
+}
+
+.field-invalid .phone-field__country,
+.field-invalid .phone-field__number {
+  border-color: var(--oo-danger);
+}
+
+@media (max-width: 540px) {
+  .phone-field {
+    grid-template-columns: 1fr;
+  }
+}
+
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   outline: 2px solid var(--oo-primary-light);
   border-color: var(--oo-primary);
 }
 
 .field-invalid input,
-.field-invalid select {
+.field-invalid select,
+.field-invalid textarea {
   border-color: var(--oo-danger);
 }
 
