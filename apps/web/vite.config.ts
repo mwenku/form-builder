@@ -4,6 +4,9 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: ["monaco-editor", "@monaco-editor/react"],
+  },
   test: {
     environment: "node",
   },

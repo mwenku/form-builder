@@ -86,6 +86,7 @@ function DynamicField({
         error={error}
         required={required}
         helpText={helpText}
+        placeholder={placeholder}
         onChange={(nextValue) => onChange(field, nextValue)}
       />
     );

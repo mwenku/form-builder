@@ -17,7 +17,21 @@ export function FormListPage() {
         <meta property="og:title" content="Forms" />
         <meta property="og:description" content="Browse and complete available forms." />
       </Helmet>
-      <PageShell title="Forms" description={userMessagesStatic.formListIntro}>
+      <PageShell title="Forms" description={userMessagesStatic.formListIntro} layout="wide">
+        <div className="reviewer-banner" role="note">
+          <p>
+            <strong>Reviewer quick start:</strong> open the <Link to="/playground">Playground</Link>{" "}
+            to design and publish a form from JSON — no SQL needed. Or try the{" "}
+            <a
+              href="https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground"
+              rel="noreferrer"
+              target="_blank"
+            >
+              live demo
+            </a>
+            .
+          </p>
+        </div>
         {isPending ? <LoadingState message="Loading forms…" /> : null}
         {isError ? (
           <ErrorState code={apiErrorCodeFromUnknown(error)} onRetry={() => refetch()} />
@@ -26,7 +40,7 @@ export function FormListPage() {
           <EmptyState message={userMessagesStatic.emptyForms} />
         ) : null}
         {!isPending && !isError && forms.length > 0 ? (
-          <ul className="form-list">
+          <ul className="form-list form-list--grid">
             {forms.map((form) => (
               <li key={form.id} className="form-card">
                 <div className="form-card-body">

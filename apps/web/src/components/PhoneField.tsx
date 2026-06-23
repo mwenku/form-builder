@@ -7,10 +7,20 @@ type Props = {
   required: boolean;
   label: string;
   helpText?: string;
+  placeholder?: string;
   onChange: (value: string) => void;
 };
 
-export function PhoneField({ id, value, error, required, label, helpText, onChange }: Props) {
+export function PhoneField({
+  id,
+  value,
+  error,
+  required,
+  label,
+  helpText,
+  placeholder,
+  onChange,
+}: Props) {
   const errorId = `${id}-error`;
   const helpId = `${id}-help`;
   const hasError = Boolean(error);
@@ -53,7 +63,7 @@ export function PhoneField({ id, value, error, required, label, helpText, onChan
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
-          placeholder="7700 900123"
+          placeholder={placeholder ?? "7700 900123"}
           value={nationalNumber}
           aria-invalid={hasError}
           aria-describedby={

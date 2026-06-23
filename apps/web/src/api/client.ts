@@ -3,6 +3,8 @@ import type {
   FormConfig,
   FormIntegrityView,
   FormSummary,
+  PublishFormRequest,
+  PublishFormVersionRequest,
   SubmissionSummary,
 } from "@/generated/api-types";
 import { ApiError, errorCodeFromStatus } from "@/lib/api-error";
@@ -24,6 +26,23 @@ async function request<T>(path: string): Promise<T> {
   let response: Response;
   try {
     response = await fetch(apiUrl(path));
+  } catch {
+    throw new ApiError("network");
+  }
+  if (!response.ok) {
+    throw new ApiError(errorCodeFromStatus(response.status));
+  }
+  return parseJSON<T>(response);
+}
+
+async function postJSON<T>(path: string, body: unknown): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(apiUrl(path), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
   } catch {
     throw new ApiError("network");
   }
@@ -60,6 +79,19 @@ export async function fetchForm(id: string): Promise<FormConfig> {
 export async function fetchIntegrity(id: string): Promise<FormIntegrityView> {
   const data = await request<unknown>(`/forms/${id}/integrity`);
   return assertObject<FormIntegrityView>(data);
+}
+
+export async function createForm(input: PublishFormRequest): Promise<FormConfig> {
+  const data = await postJSON<unknown>("/forms", input);
+  return assertObject<FormConfig>(data);
+}
+
+export async function publishFormVersion(
+  formId: string,
+  input: PublishFormVersionRequest,
+): Promise<FormConfig> {
+  const data = await postJSON<unknown>(`/forms/${formId}/versions`, input);
+  return assertObject<FormConfig>(data);
 }
 
 export type SubmitResult =

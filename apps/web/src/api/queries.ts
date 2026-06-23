@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchForm, fetchForms, fetchIntegrity, submitForm } from "@/api/client";
+import {
+  createForm,
+  fetchForm,
+  fetchForms,
+  fetchIntegrity,
+  publishFormVersion,
+  submitForm,
+} from "@/api/client";
+import type { PublishFormRequest, PublishFormVersionRequest } from "@/generated/api-types";
 import { queryKeys } from "@/api/query-keys";
 
 export function useFormsQuery() {
@@ -34,6 +42,32 @@ export function useSubmitFormMutation(formId: string) {
       if (result.ok) {
         queryClient.invalidateQueries({ queryKey: queryKeys.integrity(formId) });
       }
+    },
+  });
+}
+
+export function useCreateFormMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: PublishFormRequest) => createForm(input),
+    onSuccess: (form) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.forms });
+      queryClient.setQueryData(queryKeys.form(form.id), form);
+    },
+  });
+}
+
+export function usePublishFormVersionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ formId, schema, uiSchema }: PublishFormVersionRequest & { formId: string }) =>
+      publishFormVersion(formId, { schema, uiSchema }),
+    onSuccess: (form) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.forms });
+      queryClient.setQueryData(queryKeys.form(form.id), form);
+      queryClient.invalidateQueries({ queryKey: queryKeys.integrity(form.id) });
     },
   });
 }

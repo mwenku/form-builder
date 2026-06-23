@@ -1,9 +1,10 @@
 import { HelmetProvider } from "react-helmet-async";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
 import { AppProviders } from "@/components/AppProviders";
 import { FormListPage } from "@/pages/FormListPage";
 import { FormFillPage } from "@/pages/FormFillPage";
 import { IntegrityPage } from "@/pages/IntegrityPage";
+import { PlaygroundPage } from "@/pages/PlaygroundPage";
 
 function BrandMark() {
   return (
@@ -21,23 +22,42 @@ function BrandMark() {
   );
 }
 
+function Navbar() {
+  const location = useLocation();
+  const playgroundActive = location.pathname.startsWith("/playground");
+
+  return (
+    <header className="navbar">
+      <div className="contained-width navbar__wrapper">
+        <Link to="/" className="navbar__brand" aria-label="Form Builder home">
+          <BrandMark />
+          <span className="navbar__title">Form Builder</span>
+        </Link>
+        <nav className="navbar__nav" aria-label="Main">
+          <Link
+            className={playgroundActive ? "navbar__link is-active" : "navbar__link"}
+            to="/playground"
+            aria-current={playgroundActive ? "page" : undefined}
+          >
+            Playground
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
 export function App() {
   return (
     <AppProviders>
       <HelmetProvider>
         <BrowserRouter>
           <div className="app">
-            <header className="navbar">
-              <div className="contained-width navbar__wrapper">
-                <a href="/" className="navbar__brand" aria-label="Form Builder home">
-                  <BrandMark />
-                  <span className="navbar__title">Form Builder</span>
-                </a>
-              </div>
-            </header>
+            <Navbar />
             <main className="app-main contained-width">
               <Routes>
                 <Route path="/" element={<FormListPage />} />
+                <Route path="/playground" element={<PlaygroundPage />} />
                 <Route path="/forms/:id/integrity" element={<IntegrityPage />} />
                 <Route path="/forms/:id" element={<FormFillPage />} />
               </Routes>

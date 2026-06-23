@@ -49,3 +49,15 @@ export interface FormIntegrityView {
 	versions: FormVersionSummary[];
 	byVersion: SubmissionsByVersion[];
 }
+
+export interface PublishFormRequest {
+	title: string;
+	description: string;
+	schema: unknown;
+	uiSchema: unknown;
+}
+
+export interface PublishFormVersionRequest {
+	schema: unknown;
+	uiSchema: unknown;
+}
