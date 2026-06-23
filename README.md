@@ -1,38 +1,39 @@
-# Dynamic Form Builder Engine
+# Dynamic Form Builder
 
-Store form layouts as JSON Schema, validate submissions at runtime, render fields dynamically in React.
+Store form layouts as JSON Schema, validate submissions against them at runtime, and render fields dynamically in React.
+
+> The quickest way to see it working is the live demo or `make reviewer`; local dev, API docs, and tests are all documented below.
 
 ## Try it
 
-**Live demo:** https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground
+- **Live demo** (deployed on a personal VPS): https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground
+- **Local, full stack:** `make reviewer`; or, without make, `docker compose --env-file compose.env up -d --build`
 
-**Local (full stack):** `make reviewer`, or `docker compose --env-file compose.env up -d --build` without make.
-
-Open http://localhost:9999/playground → load a template → publish → fill the form → view history.
+Then open the **Playground**, load a template, publish it, fill in the form, and view its version history.
 
 ## Run locally
 
-**Needs:** Docker, Go 1.22+, Node 20+, Git.
+**Needs:** Docker is all you need for `make reviewer` (the full-stack path). For local hot-reload dev (`make dev`) you'll also want Go 1.22+, Node 20+, pnpm, and Git.
 
 ### With `make` (macOS / Linux / Git Bash)
 
 ```bash
-git clone <repo-url>
-cd open_ownership_project
+git clone https://github.com/mwenku/form-builder.git
+cd form-builder
 make setup   # first time
 make dev     # hot reload → http://localhost:5173
 ```
 
 | Command | What it does |
 |---------|--------------|
-| `make dev` | Development (:5173, API at `/api`) |
+| `make dev` | Development (:5173, API proxied through `/api`) |
 | `make reviewer` | Full stack (:9999) + printed URLs |
 | `make down` | Stop containers |
 | `make build` | API docs + web production build |
 | `make test` | Go + frontend tests |
 | `make ci` | Lint, build, test, drift checks |
 
-Don't have `make`? Install it ([GNU make](https://www.gnu.org/software/make/)), e.g. `brew install make` (macOS), `choco install make` (Windows), or use **Git Bash** / **WSL** which include it. Or use the direct commands below.
+Don't have `make`? Install it ([GNU make](https://www.gnu.org/software/make/)), e.g. `brew install make` (macOS), `choco install make` (Windows), or use **Git Bash** / **WSL** which may include it. Or use the direct commands below.
 
 ### Without `make`
 
@@ -41,13 +42,13 @@ Run from the repo root.
 **First-time setup** (`make setup`):
 
 ```bash
-corepack enable
+corepack enable                                # provides pnpm (or: npm i -g pnpm@latest)
 pnpm install
 cd apps/api && go mod download && cd ../..
 pnpm prepare
-cp -n compose.env.example compose.env          # Windows: copy compose.env.example compose.env if missing
+cp -n compose.env.example compose.env
 
-docker compose --env-file compose.env -f docker-compose.dev.yml up -d --build postgres api
+docker compose --env-file compose.env -f docker-compose.yml -f docker-compose.dev.yml up -d --build postgres api
 
 # wait for API (repeat until 200)
 curl -sf http://localhost:8080/health
@@ -59,7 +60,7 @@ typeshare .                                    # optional, if installed
 **Development** (`make dev`):
 
 ```bash
-docker compose --env-file compose.env -f docker-compose.dev.yml up -d postgres api
+docker compose --env-file compose.env -f docker-compose.yml -f docker-compose.dev.yml up -d postgres api
 curl -sf http://localhost:8080/health          # wait until ready
 pnpm dev                                       # → http://localhost:5173
 ```
@@ -106,38 +107,26 @@ Submit  → POST /forms/{id}/submissions → validate → form_submissions row
 
 **API docs:** [docs/api/index.html](docs/api/index.html) or `/api-docs/` when running. Spec: `docs/api/openapi.yaml`. Generated on `pnpm build` / `make build` (also checked on pre-commit).
 
-## Design & trade-offs
+### Where to look in the code
 
-### Why this shape?
+- **Validation engine** (the core idea): `apps/api/internal/validation/`: compiles stored JSON Schema into [Zog](https://github.com/Oudwins/zog) validators per request.
+- **HTTP handlers & routes:** `apps/api/internal/handlers/`
+- **Database access:** `apps/api/internal/db/store.go`
+- **Dynamic form renderer:** `apps/web/src/components/FormRenderer.tsx`
+- **Design & publish UI:** `apps/web/src/pages/PlaygroundPage.tsx`
 
-- **PostgreSQL + JSONB**: flexible schemas without per-form tables; FK on `(form_config_id, form_config_version)` keeps submissions tied to a real config version.
-- **Versioned rows, not updates**: publishing inserts a new `form_configs` row. Submissions never mutate their pinned version.
-- **JSON Schema in the DB**: validation rules live in config, compiled at request time. Supports flat objects with `string`, `number`, `boolean` (no nested/array/`$ref` in this prototype).
-- **`/api` proxy**: nginx (prod) or Vite (dev) forwards to the Go service; the browser never calls the backend host directly.
+## What I'd change for production
 
-### Error handling
+Some things are intentionally out of scope for this prototype. The main things I'd change before calling it production-ready:
 
-| Status | Response |
-|--------|----------|
-| `400` | `{ "errors": [{ "field", "message" }] }` |
-| `404` | `{ "code": "not_found" }` |
-| `500` | `{ "code": "internal_error" }` |
-
-The frontend shows per-field errors plus loading/error/success states.
-
-### Trade-offs
-
-| Choice | Trade-off |
-|--------|-----------|
-| JSONB answers | Flexible, but reporting needs JSON queries or ETL |
-| Runtime compile | Dynamic rules without redeploy; add a cache at scale |
-| No auth | Easy to demo; needs tenancy before production |
-| Playground, not a designer | Publish via JSON/UI editor, not drag-and-drop |
-
-### Scaling further
-
-Schema compile cache, managed Postgres, horizontal stateless API containers, auth/tenancy, async submission webhooks, fuller JSON Schema support.
+- **Auth**: none today; needs accounts, roles, and possibly some kind of multi-tenancy.
+- **Validation**: it's a JSON Schema subset (no nested objects, arrays, or `$ref`) and rules recompile on every request; I'd broaden it and cache the compiled rules.
+- **Database**: self-hosted Postgres in a container, with migrations and seed running on app boot; I'd move to a managed/serverless DB and a dedicated migration job.
+- **Scale**: list endpoints have no pagination, and version publishing has a read-then-insert race that needs a transaction or lock.
+- **Observability**: add structured logging, metrics, and tracing; right now 500s aren't even logged.
+- **Tests**: only the validation engine and utils are covered; I'd add handler, integration, and end-to-end (Playwright) tests.
+- **UI**: it's a demo; needs an accessibility pass, responsive/cross-browser work, and a real design system instead of hand-rolled CSS.
 
 ## Deploy
 
-GitHub Actions runs on pull requests only (`make ci` + `docker compose build`). Deploy is separate: Dokploy auto-deploys `main` (see [deploy/dokploy.md](deploy/dokploy.md)). Enable branch protection so merges require CI green.
+The live demo runs as Docker containers (web, API, Postgres) on my personal VPS, fronted by Traefik (see [deploy/dokploy.md](deploy/dokploy.md)).
