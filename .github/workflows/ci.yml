@@ -1,38 +1,62 @@
 name: ci
 
 on:
-  push:
   pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: 0
 
 jobs:
   quality:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: formbuilder
-          POSTGRES_PASSWORD: formbuilder
-          POSTGRES_DB: formbuilder
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U formbuilder -d formbuilder"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgres://formbuilder:formbuilder@localhost:5432/formbuilder?sslmode=disable
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
+          cache-dependency-path: apps/api/go.sum
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: pnpm
+
       - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-      - run: corepack enable && pnpm install
-      - run: cp compose.env.example compose.env
-      - run: make ci
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.2
+
+      - name: Install typeshare
+        uses: taiki-e/install-action@v2
+        with:
+          tool: typeshare-cli@1.13.3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare env
+        run: cp compose.env.example compose.env
+
+      - name: Quality checks
+        run: make ci
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare env
+        run: cp compose.env.example compose.env
+
+      - name: Build images
+        run: docker compose --env-file compose.env build

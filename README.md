@@ -140,4 +140,4 @@ Schema compile cache, managed Postgres, horizontal stateless API containers, aut
 
 ## Deploy
 
-Docker Compose on Dokploy: see [deploy/dokploy.md](deploy/dokploy.md). CI: `make ci` or the build/test commands above.
+GitHub Actions runs on pull requests only (`make ci` + `docker compose build`). Deploy is separate: Dokploy auto-deploys `main` (see [deploy/dokploy.md](deploy/dokploy.md)). Enable branch protection so merges require CI green.

@@ -82,6 +82,10 @@ check-api-docs:
 	git diff --exit-code docs/api/index.html apps/web/public/api-docs/index.html
 
 check-types:
+	@if [ -n "$$CI" ] && ! command -v typeshare >/dev/null 2>&1; then \
+		echo "typeshare is required in CI"; \
+		exit 1; \
+	fi
 	@if command -v typeshare >/dev/null 2>&1; then \
 		typeshare . ; \
 		git diff --exit-code apps/web/src/generated/api-types.ts; \

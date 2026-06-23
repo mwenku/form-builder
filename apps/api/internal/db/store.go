@@ -111,7 +111,7 @@ func (s *Store) DeleteForm(ctx context.Context, formID uuid.UUID) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	tag, err := tx.Exec(ctx, `DELETE FROM forms WHERE id = $1`, formID)
 	if err != nil {
