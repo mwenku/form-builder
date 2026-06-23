@@ -21,7 +21,7 @@ export function FormListPage() {
         <div className="reviewer-banner" role="note">
           <p>
             <strong>Reviewer quick start:</strong> open the <Link to="/playground">Playground</Link>{" "}
-            to design, publish, archive, or delete forms. Tr try the{" "}
+            to design, publish, archive, or delete forms. Try the{" "}
             <a
               href="https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground"
               rel="noreferrer"

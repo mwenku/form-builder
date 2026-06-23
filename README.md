@@ -127,8 +127,6 @@ Some things are intentionally out of scope for this prototype. The main things I
 - **Tests**: only the validation engine and utils are covered; I'd add handler, integration, and end-to-end (Playwright) tests.
 - **UI**: it's a demo; needs an accessibility pass, responsive/cross-browser work, and a real design system instead of hand-rolled CSS.
 
-**Cherry on top:** with more time, the feature I'd most want to build is a drag-and-drop form designer that writes the JSON Schema for you; going further, generating a ready-to-publish form from a plain-English prompt.
-
 ## Deploy
 
-GitHub Actions runs on pull requests only (`make ci` + `docker compose build`). Deploy is separate: Dokploy auto-deploys `main` (see [deploy/dokploy.md](deploy/dokploy.md)). Enable branch protection so merges require CI green.
+The live demo runs as Docker containers (web, API, Postgres) on my personal VPS, fronted by Traefik (see [deploy/dokploy.md](deploy/dokploy.md)).
