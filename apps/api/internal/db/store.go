@@ -146,6 +146,50 @@ func (s *Store) CreateSubmission(ctx context.Context, formID uuid.UUID, version 
 	return &sub, nil
 }
 
+func (s *Store) CreateForm(
+	ctx context.Context,
+	title string,
+	description string,
+	schema json.RawMessage,
+	uiSchema json.RawMessage,
+) (*models.FormConfig, error) {
+	formID := uuid.New()
+	return s.insertFormConfig(ctx, formID, 1, title, description, schema, uiSchema)
+}
+
+func (s *Store) PublishFormVersion(
+	ctx context.Context,
+	formID uuid.UUID,
+	schema json.RawMessage,
+	uiSchema json.RawMessage,
+) (*models.FormConfig, error) {
+	latest, err := s.GetLatestFormConfig(ctx, formID)
+	if err != nil {
+		return nil, err
+	}
+	if latest == nil {
+		return nil, nil
+	}
+	return s.insertFormConfig(ctx, formID, latest.Version+1, latest.Title, latest.Description, schema, uiSchema)
+}
+
+func (s *Store) insertFormConfig(
+	ctx context.Context,
+	formID uuid.UUID,
+	version int,
+	title string,
+	description string,
+	schema json.RawMessage,
+	uiSchema json.RawMessage,
+) (*models.FormConfig, error) {
+	row := s.pool.QueryRow(ctx, `
+		INSERT INTO form_configs (id, version, title, description, schema, ui_schema)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, version, title, description, schema, ui_schema
+	`, formID, version, title, description, schema, uiSchema)
+	return scanFormConfig(row)
+}
+
 func (s *Store) GetIntegrityView(ctx context.Context, formID uuid.UUID) (*models.FormIntegrityView, error) {
 	latest, err := s.GetLatestFormConfig(ctx, formID)
 	if err != nil || latest == nil {

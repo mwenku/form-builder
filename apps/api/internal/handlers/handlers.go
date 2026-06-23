@@ -24,8 +24,10 @@ func (a *API) Router() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/health", a.health).Methods(http.MethodGet)
 	r.HandleFunc("/forms", a.listForms).Methods(http.MethodGet)
+	r.HandleFunc("/forms", a.createForm).Methods(http.MethodPost)
 	r.HandleFunc("/forms/{id}", a.getForm).Methods(http.MethodGet)
 	r.HandleFunc("/forms/{id}/integrity", a.getIntegrity).Methods(http.MethodGet)
+	r.HandleFunc("/forms/{id}/versions", a.publishFormVersion).Methods(http.MethodPost)
 	r.HandleFunc("/forms/{id}/submissions", a.createSubmission).Methods(http.MethodPost)
 	return r
 }

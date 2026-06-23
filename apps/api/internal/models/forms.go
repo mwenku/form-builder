@@ -57,3 +57,17 @@ type FormIntegrityView struct {
 	Versions  []FormVersionSummary   `json:"versions"`
 	ByVersion []SubmissionsByVersion `json:"byVersion"`
 }
+
+//typeshare:typescript
+type PublishFormRequest struct {
+	Title       string          `json:"title"`
+	Description string          `json:"description"`
+	Schema      json.RawMessage `json:"schema"`
+	UISchema    json.RawMessage `json:"uiSchema"`
+}
+
+//typeshare:typescript
+type PublishFormVersionRequest struct {
+	Schema   json.RawMessage `json:"schema"`
+	UISchema json.RawMessage `json:"uiSchema"`
+}

@@ -125,3 +125,16 @@ func TestValidateUUID(t *testing.T) {
 		t.Fatal("expected invalid uuid error")
 	}
 }
+
+func TestValidateSchemaDefinition_valid(t *testing.T) {
+	if err := validation.ValidateSchemaDefinition(contactSchema()); err != nil {
+		t.Fatalf("expected valid schema, got %v", err)
+	}
+}
+
+func TestValidateSchemaDefinition_invalid(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object","properties":{"x":{"type":"unsupported"}}}`)
+	if err := validation.ValidateSchemaDefinition(schema); err == nil {
+		t.Fatal("expected invalid schema error")
+	}
+}
