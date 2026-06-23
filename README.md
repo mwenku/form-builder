@@ -125,18 +125,29 @@ Submit  → POST /forms/{id}/submissions → validate → form_submissions row
 
 The frontend shows per-field errors plus loading/error/success states.
 
-### Trade-offs
+### Architecture decisions & trade-offs
 
-| Choice | Trade-off |
-|--------|-----------|
-| JSONB answers | Flexible, but reporting needs JSON queries or ETL |
-| Runtime compile | Dynamic rules without redeploy; add a cache at scale |
-| No auth | Easy to demo; needs tenancy before production |
-| Playground, not a designer | Publish via JSON/UI editor, not drag-and-drop |
+Each row is a deliberate choice for this prototype, what it buys us, and what we'd revisit for production.
+
+| Decision | Why we chose it | Trade-off / production path |
+|----------|-----------------|-----------------------------|
+| JSONB answers + JSON Schema stored in the DB | New forms need no migrations or per-form tables | Reporting needs JSON queries or ETL; weaker column-level constraints than a typed schema |
+| Immutable versioned config rows (insert, never update) | Submissions stay pinned to the exact schema that validated them; full history is preserved | `form_configs` grows unbounded; there are no in-place edits—every change is a new version |
+| Custom JSON-Schema-subset validator on top of Zog | Tailored, user-friendly field errors and a predictable supported feature set | Subset only (no nested/array/`$ref`, `integer` is treated as `number`, `date` is a loose regex); rules are compiled per request—needs a cache at scale |
+| Validation lives only on the server | Single source of truth; no rule drift between client and server | A network round-trip per submit; no inline "as-you-type" or offline validation |
+| Go structs → typeshare-generated TS types as the API contract | One source of truth; drift is caught in CI | Extra codegen step; the generated file is committed and `typeshare` must be installed locally |
+| Split `forms` (identity + lifecycle) from `form_configs` (versioned content) | Archive/restore/delete and submission counts without touching version rows | An extra join plus a registration step that must stay in sync with config inserts |
+| `/api` same-origin proxy (nginx in prod, Vite in dev) | Browser never targets the API host; no CORS in production | One proxy hop; the in-code CORS layer is effectively unused |
+| Migrations + seed run on API startup | Zero-step bootstrap for a single container | Replicas race on boot—real deploys want a dedicated migration job, which is in tension with horizontal scaling |
+| Optimistic version publish (read latest, insert `+1`) guarded by the `(id, version)` primary key | No locking; simple at low concurrency | Concurrent publishes race—one wins, the other errors; needs a transaction/lock or serializable retry at scale |
+| List endpoints return everything (no pagination) | Simple queries and simple client code | Unbounded result sets as forms and submissions grow |
+| React Query for server state + Recoil for form-fill UI state | Clear split; server data is cached and auto-invalidated | A second state library (Recoil, now unmaintained) for a small slice of UI state |
+| No auth, single shared DB role | Fast to demo | Needs auth + tenancy before production |
+| Playground (JSON/UI editor), not a drag-and-drop designer | Ships the publish pipeline quickly | Less polished authoring UX |
 
 ### Scaling further
 
-Schema compile cache, managed Postgres, horizontal stateless API containers, auth/tenancy, async submission webhooks, fuller JSON Schema support.
+Schema compile cache, dedicated migration job (decoupled from app boot), paginated list endpoints, managed Postgres, horizontal stateless API containers, auth/tenancy, async submission webhooks, fuller JSON Schema support.
 
 ## Deploy
 
