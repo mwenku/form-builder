@@ -3,7 +3,7 @@ COMPOSE := docker compose --env-file compose.env
 API_DIR := apps/api
 GO_FILES := $(shell find $(API_DIR) -name '*.go' -not -path '*/vendor/*')
 
-.PHONY: setup install install-deps install-go install-hooks env up down dev \
+.PHONY: setup install install-deps install-go install-hooks env up down dev reviewer \
 	generate-types check-types format-check fmt lint build test ci compose-build compose-up dokploy-env wait-api
 
 setup: install env up wait-api generate-types
@@ -35,6 +35,19 @@ compose-build:
 
 compose-up:
 	$(COMPOSE) up -d --build
+
+reviewer: compose-up
+	@echo ""
+	@echo "Reviewer quick start"
+	@echo "===================="
+	@echo "App:        http://localhost:$${APP_PORT:-9999}"
+	@echo "Playground: http://localhost:$${APP_PORT:-9999}/playground"
+	@echo ""
+	@echo "1. Open Playground → load a template"
+	@echo "2. Edit in UI or JSON mode, preview live"
+	@echo "3. Publish → fill the form → View history on the form list"
+	@echo ""
+	@echo "Live demo:  https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground"
 
 dev: up wait-api
 	pnpm dev

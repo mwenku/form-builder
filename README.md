@@ -2,7 +2,24 @@
 
 Configuration-driven forms: JSON Schema in PostgreSQL, runtime validation in Go, dynamic React rendering.
 
-**Live demo:** https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/
+## For reviewers
+
+**Fastest path:** [live demo](https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground) — no install.
+
+**Local (one command):**
+
+```bash
+make reviewer
+```
+
+Then open http://localhost:9999/playground and:
+
+1. Load a template (contact or feedback)
+2. Edit fields in **UI** mode or raw **JSON**
+3. **Publish new form** (or a new version of an existing form)
+4. Fill it out, then use **View history** on the form list
+
+No SQL, migrations, or seed edits required.
 
 ## Quick start
 
@@ -33,6 +50,7 @@ Requires Docker Desktop, Go 1.22+, Node 20+, and Git.
 
 | Command | Purpose |
 |---------|---------|
+| `make reviewer` | Full stack + printed URLs for trying the Playground |
 | `make setup` | First-time install, env, Docker (postgres + api), typegen |
 | `make dev` | Start API containers + Vite dev server |
 | `make ci` | Code quality: types, format, lint, build, test |
@@ -43,10 +61,12 @@ Requires Docker Desktop, Go 1.22+, Node 20+, and Git.
 
 1. **Form configs** live in `form_configs` as JSON Schema + optional `ui_schema`.
 2. The **web app** fetches a config and renders fields dynamically.
-3. On submit, the **Go API** validates the payload with a JSON Schema engine (no hardcoded field rules).
+3. On submit, the **Go API** validates the payload with **Zog** (compiled from stored JSON Schema).
 4. **Submissions** are stored with `form_config_version` pinned for historical integrity.
 
 Try **Version history** on the Contact form to see a seeded v1 submission after v2 added a required phone field.
+
+Use the **Playground** (`/playground`) to publish new forms or schema versions without touching SQL.
 
 ## Data model
 
@@ -63,7 +83,7 @@ New form versions are new rows. Submissions never change their pinned version.
 
 ## Validation strategy
 
-Rules live in stored JSON Schema. The API uses `github.com/santhosh-tekuri/jsonschema/v5` at request time. Invalid payloads return `400` with `{ "errors": [{ "field", "message" }] }`.
+Rules live in stored JSON Schema. The API compiles schemas with [Zog](https://github.com/Oudwins/zog) at request time. Invalid payloads return `400` with `{ "errors": [{ "field", "message" }] }`.
 
 ## API
 
@@ -71,14 +91,16 @@ Rules live in stored JSON Schema. The API uses `github.com/santhosh-tekuri/jsons
 |--------|------|-------------|
 | GET | `/health` | Health check |
 | GET | `/forms` | List forms |
+| POST | `/forms` | Create form (version 1) |
 | GET | `/forms/{id}` | Latest config |
+| POST | `/forms/{id}/versions` | Publish new schema version |
 | GET | `/forms/{id}/integrity` | Versions + submissions by version |
 | POST | `/forms/{id}/submissions` | Validate + store |
 
 ## Tech stack
 
-- **API:** Go, gorilla/mux, pgx, goose, jsonschema  
-- **Web:** React, Vite, TypeScript, react-helmet-async  
+- **API:** Go, gorilla/mux, pgx, goose, Zog  
+- **Web:** React, Vite, TypeScript, React Query, Recoil, react-helmet-async  
 - **Types:** typeshare (Go structs → `apps/web/src/generated/api-types.ts`)
 
 ## Repository layout
@@ -101,15 +123,15 @@ scripts/  # Windows setup helpers
 ## Trade-offs
 
 - **Single `docker-compose.yml`** for local and Dokploy (no separate prod compose).  
-- **No drag-and-drop designer** — forms are seeded; rendering stored config is enough per the brief.  
+- **No drag-and-drop designer** — use the Playground or seed JSON for new forms.  
 - **No auth** — public prototype.  
 - **Generated types committed** — drift checked when typeshare is installed.  
 
 ### With more time
 
-- Admin API to publish new schema versions  
 - Compiled schema cache  
 - Managed Postgres (RDS/Neon) instead of container DB  
+- Richer Playground (field picker, diff between versions)  
 
 ## AI tools
 
