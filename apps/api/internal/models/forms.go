@@ -4,9 +4,11 @@ import "encoding/json"
 
 //typeshare:typescript
 type FormSummary struct {
-	ID            string `json:"id"`
-	Title         string `json:"title"`
-	LatestVersion int    `json:"latestVersion"`
+	ID              string `json:"id"`
+	Title           string `json:"title"`
+	LatestVersion   int    `json:"latestVersion"`
+	SubmissionCount int    `json:"submissionCount"`
+	Archived        bool   `json:"archived"`
 }
 
 //typeshare:typescript
@@ -56,6 +58,13 @@ type FormIntegrityView struct {
 	Title     string                 `json:"title"`
 	Versions  []FormVersionSummary   `json:"versions"`
 	ByVersion []SubmissionsByVersion `json:"byVersion"`
+}
+
+//typeshare:typescript
+type FormSubmissionsView struct {
+	FormID      string              `json:"formId"`
+	Title       string              `json:"title"`
+	Submissions []SubmissionSummary `json:"submissions"`
 }
 
 //typeshare:typescript

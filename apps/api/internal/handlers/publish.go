@@ -40,6 +40,26 @@ func (a *API) publishFormVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	form, err := a.store.GetLatestFormConfig(r.Context(), formID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	if form == nil {
+		writeError(w, http.StatusNotFound, "not_found")
+		return
+	}
+
+	archived, err := a.store.IsFormArchived(r.Context(), formID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	if archived {
+		writeError(w, http.StatusNotFound, "not_found")
+		return
+	}
+
 	defer r.Body.Close()
 	var body models.PublishFormVersionRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -54,16 +74,16 @@ func (a *API) publishFormVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uiSchema := normalizeUISchema(body.UISchema)
-	form, err := a.store.PublishFormVersion(r.Context(), formID, body.Schema, uiSchema)
+	updated, err := a.store.PublishFormVersion(r.Context(), formID, body.Schema, uiSchema)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error")
 		return
 	}
-	if form == nil {
+	if updated == nil {
 		writeError(w, http.StatusNotFound, "not_found")
 		return
 	}
-	writeJSON(w, http.StatusCreated, form)
+	writeJSON(w, http.StatusCreated, updated)
 }
 
 func validatePublishForm(title string, schema json.RawMessage, uiSchema json.RawMessage) []models.ValidationError {

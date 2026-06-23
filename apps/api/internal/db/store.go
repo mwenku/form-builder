@@ -21,13 +21,29 @@ func NewStore(pool *pgxpool.Pool) *Store {
 	return &Store{pool: pool}
 }
 
-func (s *Store) ListForms(ctx context.Context) ([]models.FormSummary, error) {
+func (s *Store) ListForms(ctx context.Context, includeArchived bool) ([]models.FormSummary, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT id, title, MAX(version) AS latest_version
-		FROM form_configs
-		GROUP BY id, title
-		ORDER BY title
-	`)
+		WITH latest AS (
+			SELECT DISTINCT ON (id) id, title, version
+			FROM form_configs
+			ORDER BY id, version DESC
+		)
+		SELECT
+			l.id,
+			l.title,
+			l.version,
+			(f.archived_at IS NOT NULL) AS archived,
+			COALESCE(sub.cnt, 0)::int
+		FROM latest l
+		JOIN forms f ON f.id = l.id
+		LEFT JOIN (
+			SELECT form_config_id, COUNT(*) AS cnt
+			FROM form_submissions
+			GROUP BY form_config_id
+		) sub ON sub.form_config_id = l.id
+		WHERE ($1 OR f.archived_at IS NULL)
+		ORDER BY l.title
+	`, includeArchived)
 	if err != nil {
 		return nil, err
 	}
@@ -36,12 +52,107 @@ func (s *Store) ListForms(ctx context.Context) ([]models.FormSummary, error) {
 	var forms []models.FormSummary
 	for rows.Next() {
 		var f models.FormSummary
-		if err := rows.Scan(&f.ID, &f.Title, &f.LatestVersion); err != nil {
+		var id uuid.UUID
+		if err := rows.Scan(&id, &f.Title, &f.LatestVersion, &f.Archived, &f.SubmissionCount); err != nil {
 			return nil, err
 		}
+		f.ID = id.String()
 		forms = append(forms, f)
 	}
 	return forms, rows.Err()
+}
+
+func (s *Store) IsFormArchived(ctx context.Context, formID uuid.UUID) (bool, error) {
+	var archivedAt *time.Time
+	err := s.pool.QueryRow(ctx, `
+		SELECT archived_at FROM forms WHERE id = $1
+	`, formID).Scan(&archivedAt)
+	if err == pgx.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return archivedAt != nil, nil
+}
+
+func (s *Store) registerForm(ctx context.Context, formID uuid.UUID) error {
+	_, err := s.pool.Exec(ctx, `
+		INSERT INTO forms (id) VALUES ($1)
+		ON CONFLICT (id) DO NOTHING
+	`, formID)
+	return err
+}
+
+func (s *Store) ArchiveForm(ctx context.Context, formID uuid.UUID) (bool, error) {
+	tag, err := s.pool.Exec(ctx, `
+		UPDATE forms SET archived_at = NOW()
+		WHERE id = $1 AND archived_at IS NULL
+	`, formID)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+func (s *Store) RestoreForm(ctx context.Context, formID uuid.UUID) (bool, error) {
+	tag, err := s.pool.Exec(ctx, `
+		UPDATE forms SET archived_at = NULL
+		WHERE id = $1 AND archived_at IS NOT NULL
+	`, formID)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() > 0, nil
+}
+
+func (s *Store) DeleteForm(ctx context.Context, formID uuid.UUID) (bool, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback(ctx)
+
+	tag, err := tx.Exec(ctx, `DELETE FROM forms WHERE id = $1`, formID)
+	if err != nil {
+		return false, err
+	}
+	if tag.RowsAffected() == 0 {
+		return false, nil
+	}
+
+	if _, err := tx.Exec(ctx, `DELETE FROM form_submissions WHERE form_config_id = $1`, formID); err != nil {
+		return false, err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM form_configs WHERE id = $1`, formID); err != nil {
+		return false, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (s *Store) GetSubmissionsView(ctx context.Context, formID uuid.UUID) (*models.FormSubmissionsView, error) {
+	latest, err := s.GetLatestFormConfig(ctx, formID)
+	if err != nil || latest == nil {
+		return nil, err
+	}
+
+	subs, err := s.ListSubmissions(ctx, formID)
+	if err != nil {
+		return nil, err
+	}
+	if subs == nil {
+		subs = []models.SubmissionSummary{}
+	}
+
+	return &models.FormSubmissionsView{
+		FormID:      latest.ID,
+		Title:       latest.Title,
+		Submissions: subs,
+	}, nil
 }
 
 func (s *Store) GetLatestFormConfig(ctx context.Context, formID uuid.UUID) (*models.FormConfig, error) {
@@ -187,7 +298,14 @@ func (s *Store) insertFormConfig(
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, version, title, description, schema, ui_schema
 	`, formID, version, title, description, schema, uiSchema)
-	return scanFormConfig(row)
+	form, err := scanFormConfig(row)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.registerForm(ctx, formID); err != nil {
+		return nil, err
+	}
+	return form, nil
 }
 
 func (s *Store) GetIntegrityView(ctx context.Context, formID uuid.UUID) (*models.FormIntegrityView, error) {

@@ -26,9 +26,13 @@ func (a *API) Router() *mux.Router {
 	r.HandleFunc("/forms", a.listForms).Methods(http.MethodGet)
 	r.HandleFunc("/forms", a.createForm).Methods(http.MethodPost)
 	r.HandleFunc("/forms/{id}", a.getForm).Methods(http.MethodGet)
+	r.HandleFunc("/forms/{id}", a.deleteForm).Methods(http.MethodDelete)
+	r.HandleFunc("/forms/{id}/archive", a.archiveForm).Methods(http.MethodPost)
+	r.HandleFunc("/forms/{id}/restore", a.restoreForm).Methods(http.MethodPost)
+	r.HandleFunc("/forms/{id}/submissions", a.listSubmissions).Methods(http.MethodGet)
+	r.HandleFunc("/forms/{id}/submissions", a.createSubmission).Methods(http.MethodPost)
 	r.HandleFunc("/forms/{id}/integrity", a.getIntegrity).Methods(http.MethodGet)
 	r.HandleFunc("/forms/{id}/versions", a.publishFormVersion).Methods(http.MethodPost)
-	r.HandleFunc("/forms/{id}/submissions", a.createSubmission).Methods(http.MethodPost)
 	return r
 }
 
@@ -37,7 +41,8 @@ func (a *API) health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) listForms(w http.ResponseWriter, r *http.Request) {
-	forms, err := a.store.ListForms(r.Context())
+	includeArchived := r.URL.Query().Get("archived") == "true"
+	forms, err := a.store.ListForms(r.Context(), includeArchived)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error")
 		return
@@ -61,6 +66,16 @@ func (a *API) getForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if form == nil {
+		writeError(w, http.StatusNotFound, "not_found")
+		return
+	}
+
+	archived, err := a.store.IsFormArchived(r.Context(), formID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	if archived {
 		writeError(w, http.StatusNotFound, "not_found")
 		return
 	}
@@ -99,6 +114,16 @@ func (a *API) createSubmission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if form == nil {
+		writeError(w, http.StatusNotFound, "not_found")
+		return
+	}
+
+	archived, err := a.store.IsFormArchived(r.Context(), formID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	if archived {
 		writeError(w, http.StatusNotFound, "not_found")
 		return
 	}
