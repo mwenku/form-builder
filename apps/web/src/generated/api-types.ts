@@ -6,6 +6,8 @@ export interface FormSummary {
 	id: string;
 	title: string;
 	latestVersion: number;
+	submissionCount: number;
+	archived: boolean;
 }
 
 export interface FormVersionSummary {
@@ -48,6 +50,12 @@ export interface FormIntegrityView {
 	title: string;
 	versions: FormVersionSummary[];
 	byVersion: SubmissionsByVersion[];
+}
+
+export interface FormSubmissionsView {
+	formId: string;
+	title: string;
+	submissions: SubmissionSummary[];
 }
 
 export interface PublishFormRequest {

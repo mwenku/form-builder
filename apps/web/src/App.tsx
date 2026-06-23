@@ -5,6 +5,7 @@ import { FormListPage } from "@/pages/FormListPage";
 import { FormFillPage } from "@/pages/FormFillPage";
 import { IntegrityPage } from "@/pages/IntegrityPage";
 import { PlaygroundPage } from "@/pages/PlaygroundPage";
+import { SubmissionsPage } from "@/pages/SubmissionsPage";
 
 function BrandMark() {
   return (
@@ -58,6 +59,7 @@ export function App() {
               <Routes>
                 <Route path="/" element={<FormListPage />} />
                 <Route path="/playground" element={<PlaygroundPage />} />
+                <Route path="/forms/:id/submissions" element={<SubmissionsPage />} />
                 <Route path="/forms/:id/integrity" element={<IntegrityPage />} />
                 <Route path="/forms/:id" element={<FormFillPage />} />
               </Routes>

@@ -2,17 +2,11 @@ import { Helmet } from "react-helmet-async";
 import { Link, useParams } from "react-router-dom";
 import { useIntegrityQuery } from "@/api/queries";
 import { PageShell } from "@/components/PageShell";
+import { formatSubmissionFieldKey, SubmissionCard } from "@/components/SubmissionCard";
 import { ErrorState, LoadingState } from "@/components/StatusViews";
 import { apiErrorCodeFromUnknown } from "@/lib/api-error";
-import { formatAnswerValue, formatSubmittedAt, answersEntries } from "@/lib/format";
+import { formatSubmittedAt } from "@/lib/format";
 import { userMessagesStatic } from "@/lib/user-messages";
-
-function formatFieldKey(key: string): string {
-  return key
-    .replace(/_/g, " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
 
 export function IntegrityPage() {
   const { id = "" } = useParams();
@@ -32,6 +26,8 @@ export function IntegrityPage() {
         {view ? (
           <p className="page-subnav">
             <Link to={`/forms/${view.formId}`}>Open latest version</Link>
+            {" · "}
+            <Link to={`/forms/${view.formId}/submissions`}>All submissions</Link>
           </p>
         ) : null}
         {isPending ? <LoadingState message="Loading history…" /> : null}
@@ -70,19 +66,12 @@ export function IntegrityPage() {
                 ) : (
                   <ul className="submission-list">
                     {group.submissions.map((submission, index) => (
-                      <li key={submission.id} className="submission-card">
-                        <p className="submission-meta">
-                          Response {index + 1} · {formatSubmittedAt(submission.createdAt)}
-                        </p>
-                        <dl className="answer-list">
-                          {answersEntries(submission.answers).map(([key, value]) => (
-                            <div key={key} className="answer-row">
-                              <dt>{formatFieldKey(key)}</dt>
-                              <dd>{formatAnswerValue(value)}</dd>
-                            </div>
-                          ))}
-                        </dl>
-                      </li>
+                      <SubmissionCard
+                        key={submission.id}
+                        submission={submission}
+                        index={index}
+                        formatFieldKey={formatSubmissionFieldKey}
+                      />
                     ))}
                   </ul>
                 )}

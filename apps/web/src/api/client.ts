@@ -2,13 +2,20 @@ import type {
   ErrorResponse,
   FormConfig,
   FormIntegrityView,
+  FormSubmissionsView,
   FormSummary,
   PublishFormRequest,
   PublishFormVersionRequest,
   SubmissionSummary,
+  ValidationError,
 } from "@/generated/api-types";
 import { ApiError, errorCodeFromStatus } from "@/lib/api-error";
+import type { UserErrorCode } from "@/lib/user-messages";
 import { apiUrl } from "./config";
+
+export type PublishResult =
+  | { ok: true; form: FormConfig }
+  | { ok: false; errors: ValidationError[]; code?: UserErrorCode };
 
 async function parseJSON<T>(response: Response): Promise<T> {
   const text = await response.text();
@@ -35,7 +42,7 @@ async function request<T>(path: string): Promise<T> {
   return parseJSON<T>(response);
 }
 
-async function postJSON<T>(path: string, body: unknown): Promise<T> {
+async function postPublish(path: string, body: unknown): Promise<PublishResult> {
   let response: Response;
   try {
     response = await fetch(apiUrl(path), {
@@ -44,12 +51,20 @@ async function postJSON<T>(path: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
     });
   } catch {
-    throw new ApiError("network");
+    return { ok: false, errors: [], code: "network" };
   }
-  if (!response.ok) {
-    throw new ApiError(errorCodeFromStatus(response.status));
+
+  if (response.status === 201) {
+    const form = await parseJSON<FormConfig>(response);
+    return { ok: true, form };
   }
-  return parseJSON<T>(response);
+
+  if (response.status === 400) {
+    const errorBody = await parseJSON<ErrorResponse>(response);
+    return { ok: false, errors: errorBody.errors ?? [] };
+  }
+
+  return { ok: false, errors: [], code: errorCodeFromStatus(response.status) };
 }
 
 function assertArray<T>(value: unknown, code: "load_failed" = "load_failed"): T[] {
@@ -66,8 +81,9 @@ function assertObject<T extends object>(value: unknown, code: "load_failed" = "l
   return value as T;
 }
 
-export async function fetchForms(): Promise<FormSummary[]> {
-  const data = await request<unknown>("/forms");
+export async function fetchForms(includeArchived = false): Promise<FormSummary[]> {
+  const query = includeArchived ? "?archived=true" : "";
+  const data = await request<unknown>(`/forms${query}`);
   return assertArray<FormSummary>(data);
 }
 
@@ -81,17 +97,52 @@ export async function fetchIntegrity(id: string): Promise<FormIntegrityView> {
   return assertObject<FormIntegrityView>(data);
 }
 
-export async function createForm(input: PublishFormRequest): Promise<FormConfig> {
-  const data = await postJSON<unknown>("/forms", input);
-  return assertObject<FormConfig>(data);
+export async function fetchSubmissions(id: string): Promise<FormSubmissionsView> {
+  const data = await request<unknown>(`/forms/${id}/submissions`);
+  return assertObject<FormSubmissionsView>(data);
+}
+
+async function postEmpty(path: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(apiUrl(path), { method: "POST" });
+  } catch {
+    throw new ApiError("network");
+  }
+  if (!response.ok) {
+    throw new ApiError(errorCodeFromStatus(response.status));
+  }
+}
+
+export async function archiveForm(id: string): Promise<void> {
+  await postEmpty(`/forms/${id}/archive`);
+}
+
+export async function restoreForm(id: string): Promise<void> {
+  await postEmpty(`/forms/${id}/restore`);
+}
+
+export async function deleteForm(id: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(apiUrl(`/forms/${id}`), { method: "DELETE" });
+  } catch {
+    throw new ApiError("network");
+  }
+  if (!response.ok && response.status !== 204) {
+    throw new ApiError(errorCodeFromStatus(response.status));
+  }
+}
+
+export async function createForm(input: PublishFormRequest): Promise<PublishResult> {
+  return postPublish("/forms", input);
 }
 
 export async function publishFormVersion(
   formId: string,
   input: PublishFormVersionRequest,
-): Promise<FormConfig> {
-  const data = await postJSON<unknown>(`/forms/${formId}/versions`, input);
-  return assertObject<FormConfig>(data);
+): Promise<PublishResult> {
+  return postPublish(`/forms/${formId}/versions`, input);
 }
 
 export type SubmitResult =

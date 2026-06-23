@@ -90,10 +90,14 @@ Rules live in stored JSON Schema. The API compiles schemas with [Zog](https://gi
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check |
-| GET | `/forms` | List forms |
+| GET | `/forms` | List active forms (`?archived=true` includes archived) |
 | POST | `/forms` | Create form (version 1) |
-| GET | `/forms/{id}` | Latest config |
+| GET | `/forms/{id}` | Latest config (active forms only) |
+| DELETE | `/forms/{id}` | Permanently delete form and all responses |
+| POST | `/forms/{id}/archive` | Hide form from list; block new responses |
+| POST | `/forms/{id}/restore` | Restore archived form |
 | POST | `/forms/{id}/versions` | Publish new schema version |
+| GET | `/forms/{id}/submissions` | List all responses (newest first) |
 | GET | `/forms/{id}/integrity` | Versions + submissions by version |
 | POST | `/forms/{id}/submissions` | Validate + store |
 

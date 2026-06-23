@@ -3,6 +3,7 @@ import type { EnumOptionDraft, FieldWidget, PlaygroundFieldDraft } from "@/lib/p
 type Props = {
   fields: PlaygroundFieldDraft[];
   onChange: (fields: PlaygroundFieldDraft[]) => void;
+  onAddField: () => void;
 };
 
 const widgetOptions: { value: FieldWidget; label: string }[] = [
@@ -19,7 +20,7 @@ function supportsPlaceholder(widget: FieldWidget): boolean {
   return widget !== "boolean" && widget !== "select";
 }
 
-export function PlaygroundUiEditor({ fields, onChange }: Props) {
+export function PlaygroundUiEditor({ fields, onChange, onAddField }: Props) {
   function updateField(index: number, patch: Partial<PlaygroundFieldDraft>) {
     const next = fields.map((field, fieldIndex) => {
       if (fieldIndex !== index) {
@@ -61,7 +62,7 @@ export function PlaygroundUiEditor({ fields, onChange }: Props) {
   return (
     <div className="playground-ui-editor">
       {fields.length === 0 ? (
-        <p className="meta">No fields yet. Use Add field above to get started.</p>
+        <p className="meta">No fields yet. Add one below to get started.</p>
       ) : null}
 
       <ul className="playground-field-list">
@@ -189,6 +190,12 @@ export function PlaygroundUiEditor({ fields, onChange }: Props) {
           </li>
         ))}
       </ul>
+
+      <div className="playground-ui-add">
+        <button type="button" className="button-primary" onClick={onAddField}>
+          Add field
+        </button>
+      </div>
     </div>
   );
 }

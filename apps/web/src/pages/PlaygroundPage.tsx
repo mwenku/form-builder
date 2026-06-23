@@ -19,6 +19,8 @@ import {
   parseJsonInput,
   type PlaygroundTemplate,
 } from "@/lib/playground-templates";
+import { PublishError, formatPublishErrors } from "@/lib/publish-error";
+import { userMessages } from "@/lib/user-messages";
 
 const JsonMonacoEditor = lazy(() =>
   import("@/components/JsonMonacoEditor").then((module) => ({
@@ -202,8 +204,12 @@ export function PlaygroundPage() {
       });
       setPublishMessage("Form published. Opening fill view…");
       navigate(`/forms/${form.id}`);
-    } catch {
-      setPublishError("Could not publish. Check your JSON schema and try again.");
+    } catch (error) {
+      if (error instanceof PublishError) {
+        setPublishError(formatPublishErrors(error.errors));
+        return;
+      }
+      setPublishError(userMessages.submit_failed);
     }
   }
 
@@ -278,14 +284,6 @@ export function PlaygroundPage() {
                     </div>
                   </div>
                 </div>
-
-                {editorMode === "ui" ? (
-                  <div className="playground-ui-sticky">
-                    <button type="button" className="button-primary" onClick={addField}>
-                      Add field
-                    </button>
-                  </div>
-                ) : null}
               </div>
 
               <div className="playground-meta">
@@ -327,7 +325,11 @@ export function PlaygroundPage() {
 
               <div className="playground-editor-body">
                 {editorMode === "ui" ? (
-                  <PlaygroundUiEditor fields={fields} onChange={handleFieldsChange} />
+                  <PlaygroundUiEditor
+                    fields={fields}
+                    onChange={handleFieldsChange}
+                    onAddField={addField}
+                  />
                 ) : (
                   <Suspense fallback={<p className="meta">Loading JSON editor…</p>}>
                     <div className="playground-json-grid">
