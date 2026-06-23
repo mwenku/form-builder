@@ -29,7 +29,7 @@ function Navbar() {
 
   return (
     <header className="navbar">
-      <div className="contained-width navbar__wrapper">
+      <div className="navbar__wrapper">
         <Link to="/" className="navbar__brand" aria-label="Form Builder home">
           <BrandMark />
           <span className="navbar__title">Form Builder</span>
@@ -53,20 +53,35 @@ export function App() {
     <AppProviders>
       <HelmetProvider>
         <BrowserRouter>
-          <div className="app">
-            <Navbar />
-            <main className="app-main contained-width">
-              <Routes>
-                <Route path="/" element={<FormListPage />} />
-                <Route path="/playground" element={<PlaygroundPage />} />
-                <Route path="/forms/:id/submissions" element={<SubmissionsPage />} />
-                <Route path="/forms/:id/integrity" element={<IntegrityPage />} />
-                <Route path="/forms/:id" element={<FormFillPage />} />
-              </Routes>
-            </main>
-          </div>
+          <AppLayout />
         </BrowserRouter>
       </HelmetProvider>
     </AppProviders>
+  );
+}
+
+function AppLayout() {
+  const location = useLocation();
+  const isPlayground = location.pathname.startsWith("/playground");
+
+  return (
+    <div className={isPlayground ? "app app--playground" : "app"}>
+      <Navbar />
+      <main
+        className={
+          isPlayground
+            ? "app-main app-main--ide contained-width contained-width--fluid"
+            : "app-main contained-width"
+        }
+      >
+        <Routes>
+          <Route path="/" element={<FormListPage />} />
+          <Route path="/playground" element={<PlaygroundPage />} />
+          <Route path="/forms/:id/submissions" element={<SubmissionsPage />} />
+          <Route path="/forms/:id/integrity" element={<IntegrityPage />} />
+          <Route path="/forms/:id" element={<FormFillPage />} />
+        </Routes>
+      </main>
+    </div>
   );
 }

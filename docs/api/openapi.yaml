@@ -1,0 +1,429 @@
+openapi: 3.0.3
+info:
+  title: Dynamic Form Builder API
+  version: 1.0.0
+  description: REST API for form configurations, validation, and submissions.
+
+servers:
+  - url: /api
+    description: Proxied path (nginx or Vite dev server)
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: health
+      responses:
+        "200":
+          description: API is up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /forms:
+    get:
+      summary: List forms
+      operationId: listForms
+      parameters:
+        - name: archived
+          in: query
+          schema:
+            type: boolean
+          description: Include archived forms when true
+      responses:
+        "200":
+          description: Form summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FormSummary"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      summary: Create form
+      operationId: createForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishFormRequest"
+      responses:
+        "201":
+          description: Created form config (version 1)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormConfig"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /forms/{id}:
+    get:
+      summary: Get latest form config
+      operationId: getForm
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      responses:
+        "200":
+          description: Latest active form config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormConfig"
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    delete:
+      summary: Delete form and all submissions
+      operationId: deleteForm
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /forms/{id}/versions:
+    post:
+      summary: Publish new schema version
+      operationId: publishFormVersion
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishFormVersionRequest"
+      responses:
+        "201":
+          description: New form config version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormConfig"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /forms/{id}/submissions:
+    get:
+      summary: List submissions
+      operationId: listSubmissions
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      responses:
+        "200":
+          description: Submissions for the form
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormSubmissionsView"
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      summary: Validate and store submission
+      operationId: createSubmission
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: Answers object validated against the form JSON Schema
+      responses:
+        "201":
+          description: Stored submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionSummary"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /forms/{id}/integrity:
+    get:
+      summary: Version history with submissions
+      operationId: getIntegrity
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      responses:
+        "200":
+          description: Versions grouped with submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormIntegrityView"
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /forms/{id}/archive:
+    post:
+      summary: Archive form
+      operationId: archiveForm
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: archived
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /forms/{id}/restore:
+    post:
+      summary: Restore archived form
+      operationId: restoreForm
+      parameters:
+        - $ref: "#/components/parameters/FormId"
+      responses:
+        "200":
+          description: Restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: restored
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  parameters:
+    FormId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    InvalidRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CodeError"
+          example:
+            code: invalid_request
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CodeError"
+          example:
+            code: not_found
+    InternalError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CodeError"
+          example:
+            code: internal_error
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    CodeError:
+      type: object
+      properties:
+        code:
+          type: string
+
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationError"
+
+    FormSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        latestVersion:
+          type: integer
+        submissionCount:
+          type: integer
+        archived:
+          type: boolean
+
+    FormConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        schema:
+          type: object
+          description: JSON Schema for answers
+        uiSchema:
+          type: object
+          description: Presentation hints (labels, order, widgets)
+
+    PublishFormRequest:
+      type: object
+      required:
+        - title
+        - schema
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        schema:
+          type: object
+        uiSchema:
+          type: object
+
+    PublishFormVersionRequest:
+      type: object
+      required:
+        - schema
+      properties:
+        schema:
+          type: object
+        uiSchema:
+          type: object
+
+    SubmissionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        formConfigVersion:
+          type: integer
+        answers:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    FormSubmissionsView:
+      type: object
+      properties:
+        formId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        submissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubmissionSummary"
+
+    FormVersionSummary:
+      type: object
+      properties:
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    SubmissionsByVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+        submissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubmissionSummary"
+
+    FormIntegrityView:
+      type: object
+      properties:
+        formId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormVersionSummary"
+        byVersion:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubmissionsByVersion"

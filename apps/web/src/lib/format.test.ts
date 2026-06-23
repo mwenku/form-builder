@@ -19,7 +19,7 @@ describe("formatAnswerValue", () => {
   });
 
   it("returns an em dash for empty values", () => {
-    expect(formatAnswerValue(null)).toBe("—");
-    expect(formatAnswerValue(undefined)).toBe("—");
+    expect(formatAnswerValue(null)).toBe("-");
+    expect(formatAnswerValue(undefined)).toBe("-");
   });
 });

@@ -1,2 +1,3 @@
 make check-types
+make check-api-docs
 make format-check

@@ -1,151 +1,143 @@
 # Dynamic Form Builder Engine
 
-Configuration-driven forms: JSON Schema in PostgreSQL, runtime validation in Go, dynamic React rendering.
+Store form layouts as JSON Schema, validate submissions at runtime, render fields dynamically in React.
 
-## For reviewers
+## Try it
 
-**Fastest path:** [live demo](https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground) — no install.
+**Live demo:** https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground
 
-**Local (one command):**
+**Local (full stack):** `make reviewer`, or `docker compose --env-file compose.env up -d --build` without make.
 
-```bash
-make reviewer
-```
+Open http://localhost:9999/playground → load a template → publish → fill the form → view history.
 
-Then open http://localhost:9999/playground and:
+## Run locally
 
-1. Load a template (contact or feedback)
-2. Edit fields in **UI** mode or raw **JSON**
-3. **Publish new form** (or a new version of an existing form)
-4. Fill it out, then use **View history** on the form list
+**Needs:** Docker, Go 1.22+, Node 20+, Git.
 
-No SQL, migrations, or seed edits required.
-
-## Quick start
-
-### macOS / Linux
+### With `make` (macOS / Linux / Git Bash)
 
 ```bash
 git clone <repo-url>
 cd open_ownership_project
-make setup
-make dev
+make setup   # first time
+make dev     # hot reload → http://localhost:5173
 ```
 
-- API: http://localhost:8080  
-- Web (Vite): http://localhost:5173  
+| Command | What it does |
+|---------|--------------|
+| `make dev` | Development (:5173, API at `/api`) |
+| `make reviewer` | Full stack (:9999) + printed URLs |
+| `make down` | Stop containers |
+| `make build` | API docs + web production build |
+| `make test` | Go + frontend tests |
+| `make ci` | Lint, build, test, drift checks |
 
-### Windows
+Don't have `make`? Install it ([GNU make](https://www.gnu.org/software/make/)), e.g. `brew install make` (macOS), `choco install make` (Windows), or use **Git Bash** / **WSL** which include it. Or use the direct commands below.
 
-```bat
-git clone <repo-url>
-cd open_ownership_project
-scripts\setup.bat
-scripts\dev.bat
+### Without `make`
+
+Run from the repo root.
+
+**First-time setup** (`make setup`):
+
+```bash
+corepack enable
+pnpm install
+cd apps/api && go mod download && cd ../..
+pnpm prepare
+cp -n compose.env.example compose.env          # Windows: copy compose.env.example compose.env if missing
+
+docker compose --env-file compose.env -f docker-compose.dev.yml up -d --build postgres api
+
+# wait for API (repeat until 200)
+curl -sf http://localhost:8080/health
+
+pnpm generate-api-docs                         # optional; also runs on pnpm build
+typeshare .                                    # optional, if installed
 ```
 
-Requires Docker Desktop, Go 1.22+, Node 20+, and Git.
+**Development** (`make dev`):
 
-## Makefile commands
+```bash
+docker compose --env-file compose.env -f docker-compose.dev.yml up -d postgres api
+curl -sf http://localhost:8080/health          # wait until ready
+pnpm dev                                       # → http://localhost:5173
+```
 
-| Command | Purpose |
-|---------|---------|
-| `make reviewer` | Full stack + printed URLs for trying the Playground |
-| `make setup` | First-time install, env, Docker (postgres + api), typegen |
-| `make dev` | Start API containers + Vite dev server |
-| `make ci` | Code quality: types, format, lint, build, test |
-| `make compose-up` | Full stack with nginx (Dokploy parity) → http://localhost:9999 |
-| `make dokploy-env` | Print env vars for Dokploy |
+**Full stack** (`make reviewer` / `make compose-up`):
+
+```bash
+docker compose --env-file compose.env up -d --build
+```
+
+Open http://localhost:9999/playground, API docs at http://localhost:9999/api-docs/
+
+**Stop** (`make down`):
+
+```bash
+docker compose --env-file compose.env down
+```
+
+**Build & test** (`make build` / `make test` / `make ci`):
+
+```bash
+cd apps/api && go build -o /dev/null ./cmd/server && cd ../..
+pnpm build                                     # generates API docs + Vite build
+
+cd apps/api && go test ./... && cd ../..
+pnpm test
+```
+
+Health check: `/api/health` → `{"status":"ok"}`.
 
 ## How it works
 
-1. **Form configs** live in `form_configs` as JSON Schema + optional `ui_schema`.
-2. The **web app** fetches a config and renders fields dynamically.
-3. On submit, the **Go API** validates the payload with **Zog** (compiled from stored JSON Schema).
-4. **Submissions** are stored with `form_config_version` pinned for historical integrity.
-
-Try **Version history** on the Contact form to see a seeded v1 submission after v2 added a required phone field.
-
-Use the **Playground** (`/playground`) to publish new forms or schema versions without touching SQL.
-
-## Data model
+1. **Form configs**: `form_configs` table holds JSON Schema + optional `ui_schema` per `(id, version)`.
+2. **Dynamic validation**: Go compiles rules from the stored schema with [Zog](https://github.com/Oudwins/zog); no hardcoded field checks.
+3. **Submissions**: answers stored as JSONB with `form_config_version` pinned to the schema that validated them.
 
 ```
-form_configs (id, version) PK
-  - title, description, schema jsonb, ui_schema jsonb
-
-form_submissions
-  - form_config_id + form_config_version → FK to form_configs
-  - answers jsonb
+Publish → form_configs row
+Fill    → GET /forms/{id} → FormRenderer
+Submit  → POST /forms/{id}/submissions → validate → form_submissions row
 ```
 
-New form versions are new rows. Submissions never change their pinned version.
+**Version history:** the seeded Contact form has v1 and v2 (v2 adds required `phone`). Old submissions stay linked to the version that accepted them; see `/forms/{id}/integrity`.
 
-## Validation strategy
+**API docs:** [docs/api/index.html](docs/api/index.html) or `/api-docs/` when running. Spec: `docs/api/openapi.yaml`. Generated on `pnpm build` / `make build` (also checked on pre-commit).
 
-Rules live in stored JSON Schema. The API compiles schemas with [Zog](https://github.com/Oudwins/zog) at request time. Invalid payloads return `400` with `{ "errors": [{ "field", "message" }] }`.
+## Design & trade-offs
 
-## API
+### Why this shape?
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check |
-| GET | `/forms` | List active forms (`?archived=true` includes archived) |
-| POST | `/forms` | Create form (version 1) |
-| GET | `/forms/{id}` | Latest config (active forms only) |
-| DELETE | `/forms/{id}` | Permanently delete form and all responses |
-| POST | `/forms/{id}/archive` | Hide form from list; block new responses |
-| POST | `/forms/{id}/restore` | Restore archived form |
-| POST | `/forms/{id}/versions` | Publish new schema version |
-| GET | `/forms/{id}/submissions` | List all responses (newest first) |
-| GET | `/forms/{id}/integrity` | Versions + submissions by version |
-| POST | `/forms/{id}/submissions` | Validate + store |
+- **PostgreSQL + JSONB**: flexible schemas without per-form tables; FK on `(form_config_id, form_config_version)` keeps submissions tied to a real config version.
+- **Versioned rows, not updates**: publishing inserts a new `form_configs` row. Submissions never mutate their pinned version.
+- **JSON Schema in the DB**: validation rules live in config, compiled at request time. Supports flat objects with `string`, `number`, `boolean` (no nested/array/`$ref` in this prototype).
+- **`/api` proxy**: nginx (prod) or Vite (dev) forwards to the Go service; the browser never calls the backend host directly.
 
-## Tech stack
+### Error handling
 
-- **API:** Go, gorilla/mux, pgx, goose, Zog  
-- **Web:** React, Vite, TypeScript, React Query, Recoil, react-helmet-async  
-- **Types:** typeshare (Go structs → `apps/web/src/generated/api-types.ts`)
+| Status | Response |
+|--------|----------|
+| `400` | `{ "errors": [{ "field", "message" }] }` |
+| `404` | `{ "code": "not_found" }` |
+| `500` | `{ "code": "internal_error" }` |
 
-## Repository layout
+The frontend shows per-field errors plus loading/error/success states.
 
-```
-apps/
-  api/    # Go REST API
-  web/    # React + Vite frontend
-deploy/   # nginx + Dokploy docs
-scripts/  # Windows setup helpers
-```  
-- **Quality:** Prettier, ESLint, golangci-lint, Husky, GitHub Actions  
-- **Deploy:** Docker Compose via Dokploy  
+### Trade-offs
 
-## CI vs deploy
+| Choice | Trade-off |
+|--------|-----------|
+| JSONB answers | Flexible, but reporting needs JSON queries or ETL |
+| Runtime compile | Dynamic rules without redeploy; add a cache at scale |
+| No auth | Easy to demo; needs tenancy before production |
+| Playground, not a designer | Publish via JSON/UI editor, not drag-and-drop |
 
-- **CI (GitHub Actions):** `make ci` — code quality only  
-- **Deploy:** Dokploy webhook on push to `main` — see [deploy/dokploy.md](deploy/dokploy.md)  
+### Scaling further
 
-## Trade-offs
+Schema compile cache, managed Postgres, horizontal stateless API containers, auth/tenancy, async submission webhooks, fuller JSON Schema support.
 
-- **Single `docker-compose.yml`** for local and Dokploy (no separate prod compose).  
-- **No drag-and-drop designer** — use the Playground or seed JSON for new forms.  
-- **No auth** — public prototype.  
-- **Generated types committed** — drift checked when typeshare is installed.  
+## Deploy
 
-### With more time
-
-- Compiled schema cache  
-- Managed Postgres (RDS/Neon) instead of container DB  
-- Richer Playground (field picker, diff between versions)  
-
-## AI tools
-
-- **Cursor** — scaffolding, boilerplate, tests, README drafts  
-- **Verified manually:** validation behaviour, migrations/seed, docker-compose wiring, API contracts  
-
-## Local full stack (nginx)
-
-```bash
-make compose-up
-```
-
-Open http://localhost:9999 — same layout as Dokploy (`/` static, `/api` proxied).
+Docker Compose on Dokploy: see [deploy/dokploy.md](deploy/dokploy.md). CI: `make ci` or the build/test commands above.

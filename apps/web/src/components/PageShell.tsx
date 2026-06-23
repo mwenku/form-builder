@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-type PageLayout = "default" | "wide";
+type PageLayout = "default" | "wide" | "ide";
 
 type Props = {
   title: string;

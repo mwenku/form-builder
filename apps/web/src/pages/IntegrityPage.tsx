@@ -15,7 +15,7 @@ export function IntegrityPage() {
   return (
     <>
       <Helmet>
-        <title>{view ? `${view.title} — History` : "Form history"}</title>
+        <title>{view ? `${view.title}: History` : "Form history"}</title>
         <meta name="description" content="View form versions and submitted responses." />
       </Helmet>
       <PageShell

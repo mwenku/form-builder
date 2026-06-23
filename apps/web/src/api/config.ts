@@ -1,5 +1,6 @@
-const base = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+const base = (import.meta.env.VITE_API_URL ?? "/api").replace(/\/$/, "");
 
 export function apiUrl(path: string): string {
-  return `${base}${path}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
 }

@@ -11,7 +11,7 @@ export function formatSubmittedAt(iso: string): string {
 
 export function formatAnswerValue(value: unknown): string {
   if (value === null || value === undefined) {
-    return "—";
+    return "-";
   }
   if (typeof value === "boolean") {
     return value ? "Yes" : "No";

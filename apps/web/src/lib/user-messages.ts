@@ -14,7 +14,7 @@ export const userMessages: Record<UserErrorCode, string> = {
 };
 
 export const userMessagesStatic = {
-  submitSuccess: "Thank you — your response has been recorded.",
+  submitSuccess: "Thank you, your response has been recorded.",
   validationSummary: "Please correct the highlighted fields before submitting.",
   emptyForms: "No forms are available right now. Please check back later.",
   formListIntro: "Choose a form below to get started.",

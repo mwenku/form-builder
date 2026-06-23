@@ -42,7 +42,7 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 			"email": "jane@example.com",
 			"message": "Tell us what you need help with…"
 		},
-		"help": { "message": "Optional — share as much detail as you like." }
+		"help": { "message": "Optional: share as much detail as you like." }
 	}`)
 
 	contactV2Schema := json.RawMessage(`{
@@ -73,7 +73,7 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 		},
 		"help": {
 			"phone": "Select your country code and enter your number without the leading zero.",
-			"message": "Optional — share as much detail as you like."
+			"message": "Optional: share as much detail as you like."
 		}
 	}`)
 
@@ -124,8 +124,8 @@ func Seed(ctx context.Context, pool *pgxpool.Pool) error {
 		schema      json.RawMessage
 		ui          json.RawMessage
 	}{
-		{contactFormID, 1, "Contact us", "Reach the team — version 1 (no phone field).", contactV1Schema, contactV1UI},
-		{contactFormID, 2, "Contact us", "Reach the team — version 2 adds a required phone field.", contactV2Schema, contactV2UI},
+		{contactFormID, 1, "Contact us", "Reach the team, version 1 (no phone field).", contactV1Schema, contactV1UI},
+		{contactFormID, 2, "Contact us", "Reach the team, version 2 adds a required phone field.", contactV2Schema, contactV2UI},
 		{requestFormID, 1, "Expense request", "Submit a simple expense or purchase request.", requestSchema, requestUI},
 	}
 

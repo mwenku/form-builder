@@ -29,7 +29,7 @@ SET
         },
         "help": {
             "phone": "Select your country code and enter your number without the leading zero.",
-            "message": "Optional — share as much detail as you like."
+            "message": "Optional: share as much detail as you like."
         }
     }'::jsonb
 WHERE id = '11111111-1111-1111-1111-111111111111' AND version = 2;

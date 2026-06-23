@@ -21,8 +21,10 @@ Copy the output into the Dokploy Compose **Environment** panel. Use strong value
 
 For the full stack (web + API + DB), deploy all services in `docker-compose.yml`. Set:
 
-- `VITE_API_URL=/api` (baked into nginx build arg — default in compose)
-- `CORS_ORIGIN` to your public site origin if needed
+- `VITE_API_URL=/api` (baked into nginx build arg, default in compose)
+- `CORS_ORIGIN` to your public site origin (only relevant if the API is reached directly; browser traffic should go through `/api` on the same origin)
+
+The Go API is **not** exposed as a separate public service. Only nginx is routed on your domain; `/api/*` is proxied to the internal `api` container.
 
 ## Domain
 
@@ -35,6 +37,7 @@ Assign your domain in Dokploy (Traefik handles routing). The `nginx` service ser
 3. Deploy
 4. Verify `https://<your-domain>/api/health` returns `{"status":"ok"}`
 5. Open the site root and submit a seeded form
+6. API reference: `https://<your-domain>/api-docs/`
 
 ## Local parity
 

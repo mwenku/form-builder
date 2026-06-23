@@ -13,7 +13,7 @@ export function SubmissionsPage() {
   return (
     <>
       <Helmet>
-        <title>{view ? `${view.title} — Submissions` : "Submissions"}</title>
+        <title>{view ? `${view.title}: Submissions` : "Submissions"}</title>
         <meta name="description" content="View all responses submitted for this form." />
       </Helmet>
       <PageShell
