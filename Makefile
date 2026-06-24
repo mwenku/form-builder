@@ -43,7 +43,7 @@ reviewer: compose-up
 	@echo "===================="
 	@echo "App:        http://localhost:$${APP_PORT:-9999}"
 	@echo "Playground: http://localhost:$${APP_PORT:-9999}/playground"
-	@echo "API:        http://localhost:$${API_PORT:-9787}"
+	@echo "API health: http://localhost:$${APP_PORT:-9999}/api/health"
 	@echo "API docs:   http://localhost:$${APP_PORT:-9999}/api-docs/"
 	@echo ""
 	@echo "1. Open Playground → load a template"

@@ -34,14 +34,14 @@ services:
       timeout: 5s
       retries: 5
 
-  web:
+  nginx:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-/api}
     ports:
-      - "${APP_PORT:-9999}:${WEB_PORT:-4892}"
+      - "${APP_PORT:-9999}:80"
     depends_on:
       api:
         condition: service_healthy

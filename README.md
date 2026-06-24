@@ -71,7 +71,7 @@ pnpm dev                                       # → http://localhost:5173
 docker compose --env-file compose.env up -d --build
 ```
 
-Open http://localhost:9999/playground, API at http://localhost:9787, API docs at http://localhost:9999/api-docs/
+Open http://localhost:9999/playground, API docs at http://localhost:9999/api-docs/
 
 **Stop** (`make down`):
 
@@ -89,7 +89,7 @@ cd apps/api && go test ./... && cd ../..
 pnpm test
 ```
 
-Health check: `http://localhost:9787/health` → `{"status":"ok"}`.
+Health check: `/api/health` on the app port (e.g. `http://localhost:9999/api/health`) → `{"status":"ok"}`. Direct API: `http://localhost:9787/health`.
 
 ## How it works
 
@@ -129,4 +129,4 @@ Some things are intentionally out of scope for this prototype. The main things I
 
 ## Deploy
 
-The live demo runs as Docker containers (web, API, Postgres) on my personal VPS, fronted by Traefik (see [deploy/dokploy.md](deploy/dokploy.md)). Traefik routes `/` to the web container and `/api` to the API.
+The live demo runs as Docker containers (nginx, API, Postgres) on my personal VPS, fronted by Traefik (see [deploy/dokploy.md](deploy/dokploy.md)). Nginx serves the app and proxies `/api` to the Go API.

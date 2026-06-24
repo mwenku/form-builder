@@ -12,9 +12,7 @@ ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 RUN pnpm build
 
-FROM node:20-alpine
-WORKDIR /app
-RUN npm install -g serve@14.2.4
-COPY --from=build /app/apps/web/dist ./dist
-EXPOSE 4892
-CMD ["serve", "-s", "dist", "-l", "4892"]
+FROM nginx:1.27-alpine
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+EXPOSE 80

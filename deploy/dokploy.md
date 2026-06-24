@@ -21,29 +21,16 @@ Copy the output into the Dokploy Compose **Environment** panel. Use strong value
 
 For the full stack (web + API + DB), deploy all services in `docker-compose.yml`. Set:
 
-- `VITE_API_URL=/api` (baked into the web build arg)
+- `VITE_API_URL=/api` (baked into the nginx build arg, default in compose)
 - `CORS_ORIGIN` to your public site origin
 
-Route traffic with Traefik:
-
-- `/` → `web` service (port **4892**)
-- `/api` → `api` service (port **9787**)
+The Go API is **not** exposed as a separate public service. Only nginx is routed on your domain; `/api/*` is proxied to the internal `api` container.
 
 ## Domain
 
-Assign your domain in Dokploy (Traefik handles routing). The `web` service serves the React app; the `api` service handles `/api/*`.
+Assign your domain in Dokploy (Traefik handles routing). The `nginx` service serves the React app and proxies `/api/*` to the Go API on port **9787**.
 
-### Migrating from `nginx` → `web`
-
-If deploy fails with *"Domain … is attached to service nginx which does not exist"*, the domain is still bound to the old service name. In Dokploy:
-
-1. Open your Compose app → **Domains**
-2. Remove or edit the domain entry that targets **`nginx`**
-3. Add the domain again targeting **`web`** on port **4892**
-4. Add a path route: `/api` → **`api`** on port **9787**
-5. Redeploy
-
-Production env overrides (in addition to `make dokploy-env` output):
+Production env overrides:
 
 ```
 VITE_API_URL=/api
@@ -56,7 +43,7 @@ CORS_ORIGIN=https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me
 
 1. Connect GitHub repository
 2. Paste environment variables
-3. Configure Traefik path routing (`/` → web, `/api` → api)
+3. Assign domain to **`nginx`** on port **80**
 4. Deploy
 5. Verify `https://<your-domain>/api/health` returns `{"status":"ok"}`
 6. Open the site root and submit a seeded form
@@ -68,4 +55,4 @@ CORS_ORIGIN=https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me
 make compose-up
 ```
 
-Open http://localhost:9999 (web maps host `APP_PORT` → container `WEB_PORT`). API is at http://localhost:9787.
+Open http://localhost:9999 (nginx maps host `APP_PORT` → container 80).
