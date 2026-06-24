@@ -42,7 +42,7 @@ func main() {
 
 	port := os.Getenv("API_PORT")
 	if port == "" {
-		port = "8080"
+		port = "9787"
 	}
 
 	server := &http.Server{

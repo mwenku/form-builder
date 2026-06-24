@@ -43,7 +43,7 @@ reviewer: compose-up
 	@echo "===================="
 	@echo "App:        http://localhost:$${APP_PORT:-9999}"
 	@echo "Playground: http://localhost:$${APP_PORT:-9999}/playground"
-	@echo "API:        http://localhost:$${API_PORT:-8080}"
+	@echo "API:        http://localhost:$${API_PORT:-9787}"
 	@echo "API docs:   http://localhost:$${APP_PORT:-9999}/api-docs/"
 	@echo ""
 	@echo "1. Open Playground → load a template"
@@ -58,7 +58,7 @@ dev: up wait-api
 wait-api:
 	@echo "Waiting for API health..."
 	@for i in {1..30}; do \
-		if curl -sf http://localhost:$${API_PORT:-8080}/health >/dev/null; then \
+		if curl -sf http://localhost:$${API_PORT:-9787}/health >/dev/null; then \
 			echo "API is ready"; \
 			exit 0; \
 		fi; \

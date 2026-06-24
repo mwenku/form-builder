@@ -16,5 +16,5 @@ FROM node:20-alpine
 WORKDIR /app
 RUN npm install -g serve@14.2.4
 COPY --from=build /app/apps/web/dist ./dist
-EXPOSE 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+EXPOSE 4892
+CMD ["serve", "-s", "dist", "-l", "4892"]

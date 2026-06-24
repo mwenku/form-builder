@@ -26,8 +26,8 @@ For the full stack (web + API + DB), deploy all services in `docker-compose.yml`
 
 Route traffic with Traefik:
 
-- `/` → `web` service (port **3000**)
-- `/api` → `api` service (port **8080**)
+- `/` → `web` service (port **4892**)
+- `/api` → `api` service (port **9787**)
 
 ## Domain
 
@@ -49,4 +49,4 @@ Assign your domain in Dokploy (Traefik handles routing). The `web` service serve
 make compose-up
 ```
 
-Open http://localhost:9999 (web maps host `APP_PORT` → container 3000). API is at http://localhost:8080.
+Open http://localhost:9999 (web maps host `APP_PORT` → container `WEB_PORT`). API is at http://localhost:9787.

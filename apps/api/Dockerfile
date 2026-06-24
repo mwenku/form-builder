@@ -10,5 +10,5 @@ FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=build /server /app/server
-EXPOSE 8080
+EXPOSE 9787
 ENTRYPOINT ["/app/server"]

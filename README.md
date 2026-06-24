@@ -51,7 +51,7 @@ cp -n compose.env.example compose.env
 docker compose --env-file compose.env up -d --build postgres api
 
 # wait for API (repeat until 200)
-curl -sf http://localhost:8080/health
+curl -sf http://localhost:9787/health
 
 pnpm generate-api-docs                         # optional; also runs on pnpm build
 typeshare .                                    # optional, if installed
@@ -61,7 +61,7 @@ typeshare .                                    # optional, if installed
 
 ```bash
 docker compose --env-file compose.env up -d postgres api
-curl -sf http://localhost:8080/health          # wait until ready
+curl -sf http://localhost:9787/health          # wait until ready
 pnpm dev                                       # → http://localhost:5173
 ```
 
@@ -71,7 +71,7 @@ pnpm dev                                       # → http://localhost:5173
 docker compose --env-file compose.env up -d --build
 ```
 
-Open http://localhost:9999/playground, API at http://localhost:8080, API docs at http://localhost:9999/api-docs/
+Open http://localhost:9999/playground, API at http://localhost:9787, API docs at http://localhost:9999/api-docs/
 
 **Stop** (`make down`):
 
@@ -89,7 +89,7 @@ cd apps/api && go test ./... && cd ../..
 pnpm test
 ```
 
-Health check: `http://localhost:8080/health` → `{"status":"ok"}`.
+Health check: `http://localhost:9787/health` → `{"status":"ok"}`.
 
 ## How it works
 
