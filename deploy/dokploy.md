@@ -33,6 +33,25 @@ Route traffic with Traefik:
 
 Assign your domain in Dokploy (Traefik handles routing). The `web` service serves the React app; the `api` service handles `/api/*`.
 
+### Migrating from `nginx` → `web`
+
+If deploy fails with *"Domain … is attached to service nginx which does not exist"*, the domain is still bound to the old service name. In Dokploy:
+
+1. Open your Compose app → **Domains**
+2. Remove or edit the domain entry that targets **`nginx`**
+3. Add the domain again targeting **`web`** on port **4892**
+4. Add a path route: `/api` → **`api`** on port **9787**
+5. Redeploy
+
+Production env overrides (in addition to `make dokploy-env` output):
+
+```
+VITE_API_URL=/api
+CORS_ORIGIN=https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me
+```
+
+`VITE_API_URL` is a build arg — trigger a rebuild after changing it.
+
 ## First deploy checklist
 
 1. Connect GitHub repository

@@ -25,17 +25,17 @@ env:
 	cp -n compose.env.example compose.env || true
 
 up:
-	$(COMPOSE) up -d postgres
-	$(COMPOSE) up -d --build api
+	$(COMPOSE) up -d --remove-orphans postgres
+	$(COMPOSE) up -d --build --remove-orphans api
 
 down:
-	$(COMPOSE) down
+	$(COMPOSE) down --remove-orphans
 
 compose-build:
 	$(COMPOSE) build
 
 compose-up:
-	$(COMPOSE) up -d --build
+	$(COMPOSE) up -d --build --remove-orphans
 
 reviewer: compose-up
 	@echo ""
