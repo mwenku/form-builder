@@ -1,6 +1,5 @@
 SHELL := /bin/bash
 COMPOSE := docker compose --env-file compose.env
-COMPOSE_DEV := $(COMPOSE) -f docker-compose.dev.yml
 API_DIR := apps/api
 GO_FILES := $(shell find $(API_DIR) -name '*.go' -not -path '*/vendor/*')
 
@@ -26,8 +25,8 @@ env:
 	cp -n compose.env.example compose.env || true
 
 up:
-	$(COMPOSE_DEV) up -d postgres
-	$(COMPOSE_DEV) up -d --build api
+	$(COMPOSE) up -d postgres
+	$(COMPOSE) up -d --build api
 
 down:
 	$(COMPOSE) down
@@ -44,6 +43,7 @@ reviewer: compose-up
 	@echo "===================="
 	@echo "App:        http://localhost:$${APP_PORT:-9999}"
 	@echo "Playground: http://localhost:$${APP_PORT:-9999}/playground"
+	@echo "API:        http://localhost:$${API_PORT:-8080}"
 	@echo "API docs:   http://localhost:$${APP_PORT:-9999}/api-docs/"
 	@echo ""
 	@echo "1. Open Playground → load a template"

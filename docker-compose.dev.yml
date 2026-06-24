@@ -1,4 +1,0 @@
-services:
-  api:
-    ports:
-      - "${API_PORT:-8080}:8080"

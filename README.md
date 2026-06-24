@@ -48,7 +48,7 @@ cd apps/api && go mod download && cd ../..
 pnpm prepare
 cp -n compose.env.example compose.env
 
-docker compose --env-file compose.env -f docker-compose.yml -f docker-compose.dev.yml up -d --build postgres api
+docker compose --env-file compose.env up -d --build postgres api
 
 # wait for API (repeat until 200)
 curl -sf http://localhost:8080/health
@@ -60,7 +60,7 @@ typeshare .                                    # optional, if installed
 **Development** (`make dev`):
 
 ```bash
-docker compose --env-file compose.env -f docker-compose.yml -f docker-compose.dev.yml up -d postgres api
+docker compose --env-file compose.env up -d postgres api
 curl -sf http://localhost:8080/health          # wait until ready
 pnpm dev                                       # → http://localhost:5173
 ```
@@ -71,7 +71,7 @@ pnpm dev                                       # → http://localhost:5173
 docker compose --env-file compose.env up -d --build
 ```
 
-Open http://localhost:9999/playground, API docs at http://localhost:9999/api-docs/
+Open http://localhost:9999/playground, API at http://localhost:8080, API docs at http://localhost:9999/api-docs/
 
 **Stop** (`make down`):
 
@@ -89,7 +89,7 @@ cd apps/api && go test ./... && cd ../..
 pnpm test
 ```
 
-Health check: `/api/health` → `{"status":"ok"}`.
+Health check: `http://localhost:8080/health` → `{"status":"ok"}`.
 
 ## How it works
 
@@ -129,4 +129,4 @@ Some things are intentionally out of scope for this prototype. The main things I
 
 ## Deploy
 
-The live demo runs as Docker containers (web, API, Postgres) on my personal VPS, fronted by Traefik (see [deploy/dokploy.md](deploy/dokploy.md)).
+The live demo runs as Docker containers (web, API, Postgres) on my personal VPS, fronted by Traefik (see [deploy/dokploy.md](deploy/dokploy.md)). Traefik routes `/` to the web container and `/api` to the API.

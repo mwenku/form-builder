@@ -6,7 +6,7 @@ info:
 
 servers:
   - url: /api
-    description: Proxied path (nginx or Vite dev server)
+    description: Proxied path (reverse proxy or Vite dev server)
 
 paths:
   /health:

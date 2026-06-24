@@ -21,23 +21,27 @@ Copy the output into the Dokploy Compose **Environment** panel. Use strong value
 
 For the full stack (web + API + DB), deploy all services in `docker-compose.yml`. Set:
 
-- `VITE_API_URL=/api` (baked into nginx build arg, default in compose)
-- `CORS_ORIGIN` to your public site origin (only relevant if the API is reached directly; browser traffic should go through `/api` on the same origin)
+- `VITE_API_URL=/api` (baked into the web build arg)
+- `CORS_ORIGIN` to your public site origin
 
-The Go API is **not** exposed as a separate public service. Only nginx is routed on your domain; `/api/*` is proxied to the internal `api` container.
+Route traffic with Traefik:
+
+- `/` → `web` service (port **3000**)
+- `/api` → `api` service (port **8080**)
 
 ## Domain
 
-Assign your domain in Dokploy (Traefik handles routing). The `nginx` service serves the React app and proxies `/api/*` to the Go API.
+Assign your domain in Dokploy (Traefik handles routing). The `web` service serves the React app; the `api` service handles `/api/*`.
 
 ## First deploy checklist
 
 1. Connect GitHub repository
 2. Paste environment variables
-3. Deploy
-4. Verify `https://<your-domain>/api/health` returns `{"status":"ok"}`
-5. Open the site root and submit a seeded form
-6. API reference: `https://<your-domain>/api-docs/`
+3. Configure Traefik path routing (`/` → web, `/api` → api)
+4. Deploy
+5. Verify `https://<your-domain>/api/health` returns `{"status":"ok"}`
+6. Open the site root and submit a seeded form
+7. API reference: `https://<your-domain>/api-docs/`
 
 ## Local parity
 
@@ -45,4 +49,4 @@ Assign your domain in Dokploy (Traefik handles routing). The `nginx` service ser
 make compose-up
 ```
 
-Open http://localhost:9999 (nginx maps host `APP_PORT` → container 80).
+Open http://localhost:9999 (web maps host `APP_PORT` → container 3000). API is at http://localhost:8080.
