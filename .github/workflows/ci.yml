@@ -44,9 +44,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Prepare env
-        run: cp compose.env.example compose.env
-
       - name: Quality checks
         run: make ci
 
@@ -55,8 +52,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Prepare env
-        run: cp compose.env.example compose.env
-
       - name: Build images
-        run: docker compose --env-file compose.env build
+        run: docker compose build

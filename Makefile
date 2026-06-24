@@ -1,12 +1,12 @@
 SHELL := /bin/bash
-COMPOSE := docker compose --env-file compose.env
+COMPOSE := docker compose
 API_DIR := apps/api
 GO_FILES := $(shell find $(API_DIR) -name '*.go' -not -path '*/vendor/*')
 
-.PHONY: setup install install-deps install-go env up down dev \
+.PHONY: setup install install-deps install-go up down dev \
 	generate-types generate-api-docs check-api-docs check-types format-check fmt lint build test ci wait-api
 
-setup: env install-deps up wait-api
+setup: install-deps up wait-api
 
 install: install-deps install-go
 
@@ -17,17 +17,14 @@ install-deps:
 install-go:
 	cd $(API_DIR) && go mod download
 
-env:
-	cp -n compose.env.example compose.env || true
-
 up:
 	$(COMPOSE) up -d --build --remove-orphans
 
 down:
 	$(COMPOSE) down --remove-orphans
 
-dev: env install-deps up wait-api
-	pnpm dev
+dev: up wait-api
+	@echo "App: http://localhost:$${WEB_PORT:-5173}"
 
 wait-api:
 	@echo "Waiting for API health..."

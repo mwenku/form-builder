@@ -8,7 +8,10 @@
     "test": "pnpm --filter web test",
     "lint": "pnpm --filter web lint",
     "generate-api-docs": "node scripts/generate-api-docs.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d --build --remove-orphans",
+    "docker:down": "docker compose down --remove-orphans"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
