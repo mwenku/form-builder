@@ -13,6 +13,7 @@ ENV VITE_API_URL=$VITE_API_URL
 RUN pnpm build
 
 FROM nginx:1.27-alpine
+RUN apk add --no-cache wget
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 80

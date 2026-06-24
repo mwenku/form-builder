@@ -1,0 +1,9 @@
+.git
+.github
+**/node_modules
+**/dist
+**/.vite
+compose.env
+docker-compose.local.yml
+*.md
+!docs/api/openapi.yaml

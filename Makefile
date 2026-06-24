@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 COMPOSE := docker compose --env-file compose.env
+COMPOSE_LOCAL := $(COMPOSE) -f docker-compose.local.yml
 API_DIR := apps/api
 GO_FILES := $(shell find $(API_DIR) -name '*.go' -not -path '*/vendor/*')
 
@@ -25,8 +26,8 @@ env:
 	cp -n compose.env.example compose.env || true
 
 up:
-	$(COMPOSE) up -d --remove-orphans postgres
-	$(COMPOSE) up -d --build --remove-orphans api
+	$(COMPOSE_LOCAL) up -d --remove-orphans postgres
+	$(COMPOSE_LOCAL) up -d --build --remove-orphans api
 
 down:
 	$(COMPOSE) down --remove-orphans
@@ -35,7 +36,7 @@ compose-build:
 	$(COMPOSE) build
 
 compose-up:
-	$(COMPOSE) up -d --build --remove-orphans
+	$(COMPOSE_LOCAL) up -d --build --remove-orphans
 
 reviewer: compose-up
 	@echo ""
@@ -119,6 +120,8 @@ test:
 ci: check-types check-api-docs format-check lint build test
 
 dokploy-env:
-	@cat compose.env.example
+	@echo "# Paste into Dokploy Compose environment (production):"
+	@cat compose.env.production.example
 	@echo ""
-	@echo "Copy these variables into your Dokploy Compose service environment panel."
+	@echo "# Local docker-compose.local.yml overrides (optional, for reference):"
+	@cat compose.env.example

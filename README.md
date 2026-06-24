@@ -7,7 +7,7 @@ Store form layouts as JSON Schema, validate submissions against them at runtime,
 ## Try it
 
 - **Live demo** (deployed on a personal VPS): https://form-builder-app-lmqi0t-feee02-51-81-223-183.traefik.me/playground
-- **Local, full stack:** `make reviewer`; or, without make, `docker compose --env-file compose.env up -d --build`
+- **Local, full stack:** `make reviewer`; or, without make, `docker compose --env-file compose.env -f docker-compose.local.yml up -d --build --remove-orphans`
 
 Then open the **Playground**, load a template, publish it, fill in the form, and view its version history.
 
@@ -68,7 +68,7 @@ pnpm dev                                       # → http://localhost:5173
 **Full stack** (`make reviewer` / `make compose-up`):
 
 ```bash
-docker compose --env-file compose.env up -d --build
+docker compose --env-file compose.env -f docker-compose.local.yml up -d --build --remove-orphans
 ```
 
 Open http://localhost:9999/playground, API docs at http://localhost:9999/api-docs/
@@ -129,4 +129,4 @@ Some things are intentionally out of scope for this prototype. The main things I
 
 ## Deploy
 
-The live demo runs as Docker containers (nginx, API, Postgres) on my personal VPS, fronted by Traefik (see [deploy/dokploy.md](deploy/dokploy.md)). Nginx serves the app and proxies `/api` to the Go API.
+The live demo runs on Dokploy as Docker Compose (nginx, API, Postgres). Traefik routes the domain to nginx; nginx proxies `/api` to the Go API. See [deploy/dokploy.md](deploy/dokploy.md).
