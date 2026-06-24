@@ -125,6 +125,8 @@ Some things are intentionally out of scope for this prototype. The main things I
 - **Scale**: list endpoints have no pagination, and version publishing has a read-then-insert race that needs a transaction or lock.
 - **Observability**: add structured logging, metrics, and tracing; right now 500s aren't even logged.
 - **Tests**: only the validation engine and utils are covered; I'd add handler, integration, and end-to-end (Playwright) tests.
+- **Submissions review**: submissions are listed as raw data today; charts, summaries, or other visuals would make reviewing responses much easier.
+- **Submissions export**: no way to export collected answers yet; CSV/JSON (or similar) download would help when you need to use the data elsewhere i.e some kind of Business Intelligence reporting.
 - **UI**: it's a demo; needs an accessibility pass, responsive/cross-browser work, and a real design system instead of hand-rolled CSS.
 
 ## Deploy
