@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-COMPOSE := docker compose
+COMPOSE := docker compose -f docker-compose.yml -f docker-compose.dev.yml
 API_DIR := apps/api
 GO_FILES := $(shell find $(API_DIR) -name '*.go' -not -path '*/vendor/*')
 

@@ -417,6 +417,16 @@ CI (`.github/workflows/ci.yml`) runs `make ci` on every pull request, including 
 
 The live demo runs as Docker Compose on a VPS (Traefik routes HTTPS to the web container; Vite proxy forwards `/api` to the Go service).
 
+On the VPS, start **without** `docker-compose.dev.yml` so bind mounts do not replace the image's `apps/web/src` with an empty host directory (that breaks `/src/main.tsx` and shows MIME-type errors in the browser):
+
+```bash
+docker compose -f docker-compose.yml up -d --build --remove-orphans
+```
+
+Set `CORS_ORIGIN` to the public HTTPS origin (for example `https://form-builder-app-….traefik.me`).
+
+Local hot reload uses `docker-compose.dev.yml` automatically via `make up` / `make dev`.
+
 **Typical production layout**
 
 1. **PostgreSQL** — managed instance or container with persistent volume.

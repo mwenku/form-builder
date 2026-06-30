@@ -43,11 +43,6 @@ services:
       VITE_PROXY_TARGET: http://api:${API_PORT:-9787}
     ports:
       - "${WEB_PORT:-5173}:5173"
-    volumes:
-      - ./apps/web/src:/app/apps/web/src
-      - ./apps/web/public:/app/apps/web/public
-      - ./apps/web/index.html:/app/apps/web/index.html
-      - ./apps/web/vite.config.ts:/app/apps/web/vite.config.ts
     depends_on:
       api:
         condition: service_healthy
